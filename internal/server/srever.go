@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/logger"
 	"github.com/go-chi/chi/v5"
 	"log"
@@ -45,7 +44,7 @@ func (s *Server) Start(ctx context.Context) error {
 	go func() {
 		log.Println("Старт сервера, порт " + s.http.Addr)
 		if err := s.http.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			fmt.Printf("Ошибка запуска сервера: %v", err)
+			log.Printf("Ошибка запуска сервера: %v", err)
 		}
 	}()
 	<-ctx.Done()
@@ -53,7 +52,7 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	s.log.Info("Остановка сервера")
+	log.Println("Остановка сервера")
 	shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
