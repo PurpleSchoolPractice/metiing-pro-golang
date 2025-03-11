@@ -60,6 +60,6 @@ func (s *Server) Stop(ctx context.Context) error {
 		log.Printf("Ошибка остановки сервера: %v", err)
 		return err
 	}
-	log.Println("Сервер остановлен")
+	log.Println("Сервер остановлен!")
 	return nil
 }
