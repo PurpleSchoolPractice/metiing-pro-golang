@@ -1,9 +1,19 @@
 package server
 
-import "context"
+import (
+	"context"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/logger"
+	"github.com/go-chi/chi/v5"
+	"log"
+	"net/http"
+	"time"
+)
 
 type Server struct {
-	log Logger
+	log    Logger
+	router *chi.Mux
+	http   *http.Server
+	app    Application
 }
 
 type Logger interface {
@@ -12,23 +22,44 @@ type Logger interface {
 	Error(msg string, args ...any)
 }
 
-type Application interface { 
+type Application interface {
 	// TODO
 }
 
-func NewServer(logger Logger, app Application) *Server {
-	return &Server{
-		log: logger,
+func NewServer(logger *logger.Logger, app Application) *Server {
+	router := chi.NewRouter()
+	server := &Server{
+		log:    logger,
+		router: router,
+		app:    app,
 	}
+	return server
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	// TODO
+	s.http = &http.Server{
+		Addr:    ":8080",
+		Handler: s.router,
+	}
+	go func() {
+		log.Println("Старт сервера, порт " + s.http.Addr)
+		if err := s.http.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("Error starting server: %v", err)
+		}
+	}()
 	<-ctx.Done()
 	return nil
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	// TODO
+	log.Println("Stopping server...")
+	shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	if err := s.http.Shutdown(shutdownCtx); err != nil {
+		log.Printf("Error shutting down server: %v", err)
+		return err
+	}
+	log.Println("Server stopped")
 	return nil
 }
