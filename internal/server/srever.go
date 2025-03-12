@@ -44,7 +44,7 @@ func (s *Server) Start(ctx context.Context) error {
 	go func() {
 		log.Println("Старт сервера, порт " + s.http.Addr)
 		if err := s.http.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Printf("Ошибка запуска сервера: %v", err)
+			log.Printf("Error starting server: %v", err)
 		}
 	}()
 	<-ctx.Done()
@@ -52,14 +52,14 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	log.Println("Остановка сервера")
+	log.Println("Stopping server...")
 	shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	if err := s.http.Shutdown(shutdownCtx); err != nil {
-		log.Printf("Ошибка остановки сервера: %v", err)
+		log.Printf("Error shutting down server: %v", err)
 		return err
 	}
-	log.Println("Сервер остановлен")
+	log.Println("Server stopped")
 	return nil
 }
