@@ -7,21 +7,45 @@ import (
 )
 
 type Config struct {
-	Server ServerConfig
+	Server   ServerConfig
+	Database DatabaseConfig
+	Logging  LoggingConfig
 }
 
 type ServerConfig struct {
-	Port string `mapstructure:"port"`
+	Port string
+}
+type DatabaseConfig struct {
+	Host     string
+	Port     string
+	Username string
+	Password string
+	Database string
+}
+type LoggingConfig struct {
+	Level  string
+	Format string
 }
 
 func LoadConfig() *Config {
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Println("Error loading .env file")
+		log.Fatal("Error loading .env file")
 	}
 	return &Config{
 		Server: ServerConfig{
-			Port: os.Getenv("PORT"),
+			Port: os.Getenv("SERVER_PORT"),
+		},
+		Database: DatabaseConfig{
+			Host:     os.Getenv("DATABASE_HOST"),
+			Port:     os.Getenv("DATABASE_PORT"),
+			Username: os.Getenv("DATABASE_USERNAME"),
+			Password: os.Getenv("DATABASE_PASSWORD"),
+			Database: os.Getenv("DATABASE_NAME"),
+		},
+		Logging: LoggingConfig{
+			Level:  os.Getenv("LOGGING_LEVEL"),
+			Format: os.Getenv("LOGGING_FORMAT"),
 		},
 	}
 }

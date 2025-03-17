@@ -13,7 +13,13 @@ import (
 )
 
 func main() {
-	logging := logger.NewLogger()
+	// Запускаем Cobra для обработки командной строки
+	Execute()
+
+	// Получаем конфигурацию после обработки командной строки
+	cfg := GetConfig()
+
+	logging := logger.NewLogger(cfg)
 	application := app.NewApp()
 
 	srv := server.NewServer(logging, application)
