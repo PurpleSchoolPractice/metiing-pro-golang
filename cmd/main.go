@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
+
 	"log"
 	"os"
 	"os/signal"
@@ -16,6 +18,7 @@ import (
 func main() {
 	cfg := configs.LoadConfig()
 	logging := logger.NewLogger(cfg)
+
 	application := app.NewApp()
 
 	srv := server.NewServer(logging, application)

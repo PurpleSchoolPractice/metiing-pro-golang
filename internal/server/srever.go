@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+
 	"errors"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/logger"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/middleware"
@@ -30,7 +31,9 @@ type Application interface {
 
 func NewServer(logger *logger.Logger, app Application) *Server {
 	router := chi.NewRouter()
+
 	router.Use(middleware.RequestLogger(logger))
+
 	server := &Server{
 		log:    logger,
 		router: router,
@@ -45,6 +48,7 @@ func (s *Server) Start(ctx context.Context) error {
 		Handler: s.router,
 	}
 	go func() {
+
 		s.log.Info("Starting server on " + s.http.Addr)
 		if err := s.http.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			s.log.Error("Error starting server: %v", err)
@@ -55,7 +59,9 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) Stop(ctx context.Context) error {
+
 	s.log.Info("Stopping server...")
+
 	shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
