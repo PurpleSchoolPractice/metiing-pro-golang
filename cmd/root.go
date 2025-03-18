@@ -66,6 +66,7 @@ func initConfig() {
 
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Используется конфигурационный файл:", viper.ConfigFileUsed())
+		//TODO Испрвить логирование
 	}
 
 	appConfig = Cfg{
