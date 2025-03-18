@@ -20,6 +20,7 @@ func main() {
 	cfg := GetConfig()
 
 	logging := logger.NewLogger(cfg)
+
 	application := app.NewApp()
 
 	srv := server.NewServer(logging, application)
