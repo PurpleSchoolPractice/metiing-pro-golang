@@ -6,54 +6,26 @@ import (
 
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-var (
-	// Флаги командной строки
-	cfgFile    string
-	serverPort string
-	dbHost     string
-	dbPort     string
-	dbUser     string
-	dbPassword string
-	dbName     string
-	logLevel   string
+// Cfg - структура конфигурации приложения
+type Cfg struct {
+	Logger   string
+	Database configs.DatabaseConfig
+	Server   configs.ServerConfig
+}
 
-	// Конфигурация приложения
-	appConfig *configs.Config
-)
+var appConfig Cfg
 
 // rootCmd представляет собой базовую команду при вызове без подкоманд
 var rootCmd = &cobra.Command{
 	Use:   "meeting-pro",
 	Short: "Meeting Pro - приложение для управления встречами",
 	Long:  `Meeting Pro - приложение для управления встречами и расписаниями встреч.`,
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		// Загружаем конфигурацию
-		appConfig = configs.LoadConfig()
-
-		// Применяем флаги командной строки, если они заданы
-		if cmd.Flags().Changed("port") {
-			appConfig.Server.Port = serverPort
-		}
-		if cmd.Flags().Changed("db-host") {
-			appConfig.Database.Host = dbHost
-		}
-		if cmd.Flags().Changed("db-port") {
-			appConfig.Database.Port = dbPort
-		}
-		if cmd.Flags().Changed("db-user") {
-			appConfig.Database.Username = dbUser
-		}
-		if cmd.Flags().Changed("db-password") {
-			appConfig.Database.Password = dbPassword
-		}
-		if cmd.Flags().Changed("db-name") {
-			appConfig.Database.Database = dbName
-		}
-		if cmd.Flags().Changed("log-level") {
-			appConfig.Logging.Level = logLevel
-		}
+	Run: func(cmd *cobra.Command, args []string) {
+		// Загружаем конфигурацию с Viper
+		initConfig()
 	},
 }
 
@@ -66,20 +38,47 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize()
+	cobra.OnInitialize(initConfig)
 
-	// Флаги, общие для всех команд
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "путь к конфигурационному файлу")
-	rootCmd.PersistentFlags().StringVar(&serverPort, "port", "", "порт сервера")
-	rootCmd.PersistentFlags().StringVar(&dbHost, "db-host", "", "хост базы данных")
-	rootCmd.PersistentFlags().StringVar(&dbPort, "db-port", "", "порт базы данных")
-	rootCmd.PersistentFlags().StringVar(&dbUser, "db-user", "", "пользователь базы данных")
-	rootCmd.PersistentFlags().StringVar(&dbPassword, "db-password", "", "пароль базы данных")
-	rootCmd.PersistentFlags().StringVar(&dbName, "db-name", "", "имя базы данных")
-	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "", "уровень логирования (debug, info, warn, error)")
+	// Указываем путь к конфигурационному файлу
+	rootCmd.PersistentFlags().String("config", "", "путь к конфигурационному файлу")
+	viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
+
+	rootCmd.PersistentFlags().String("port", "8080", "порт сервера")
+	rootCmd.PersistentFlags().String("db-host", "localhost", "хост базы данных")
+	rootCmd.PersistentFlags().String("db-port", "5432", "порт базы данных")
+	rootCmd.PersistentFlags().String("db-user", "user", "пользователь базы данных")
+	rootCmd.PersistentFlags().String("db-password", "password", "пароль базы данных")
+	rootCmd.PersistentFlags().String("db-name", "dbname", "имя базы данных")
+	rootCmd.PersistentFlags().String("log-level", "info", "уровень логирования (debug, info, warn, error)")
+
+	viper.AutomaticEnv()
 }
 
-// GetConfig возвращает конфигурацию приложения
-func GetConfig() *configs.Config {
-	return appConfig
+func initConfig() {
+	if cfgFile := viper.GetString("config"); cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+	} else {
+		viper.SetConfigName("config")
+		viper.SetConfigType("yaml")
+		viper.AddConfigPath(".")
+	}
+
+	if err := viper.ReadInConfig(); err == nil {
+		fmt.Println("Используется конфигурационный файл:", viper.ConfigFileUsed())
+	}
+
+	appConfig = Cfg{
+		Logger: viper.GetString("log-level"),
+		Database: configs.DatabaseConfig{
+			Host:     viper.GetString("db-host"),
+			Port:     viper.GetString("db-port"),
+			Username: viper.GetString("db-user"),
+			Password: viper.GetString("db-password"),
+			Database: viper.GetString("db-name"),
+		},
+		Server: configs.ServerConfig{
+			Port: viper.GetString("port"),
+		},
+	}
 }
