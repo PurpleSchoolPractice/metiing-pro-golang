@@ -16,7 +16,13 @@ import (
 )
 
 func main() {
-	cfg := configs.LoadConfig()
+
+	// Запускаем Cobra для обработки командной строки
+	Execute()
+
+	// Получаем конфигурацию после обработки командной строки
+	cfg := GetConfig()
+
 	logging := logger.NewLogger(cfg)
 
 	application := app.NewApp()
