@@ -2,9 +2,11 @@ package server
 
 import (
 	"context"
+
+	"errors"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/logger"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/middleware"
 	"github.com/go-chi/chi/v5"
-	"log"
 	"net/http"
 	"time"
 )
@@ -17,6 +19,7 @@ type Server struct {
 }
 
 type Logger interface {
+	Debug(msg string, args ...any)
 	Info(msg string, args ...any)
 	Warn(msg string, args ...any)
 	Error(msg string, args ...any)
@@ -28,6 +31,9 @@ type Application interface {
 
 func NewServer(logger *logger.Logger, app Application) *Server {
 	router := chi.NewRouter()
+
+	router.Use(middleware.RequestLogger(logger))
+
 	server := &Server{
 		log:    logger,
 		router: router,
@@ -42,9 +48,10 @@ func (s *Server) Start(ctx context.Context) error {
 		Handler: s.router,
 	}
 	go func() {
-		log.Println("Старт сервера, порт " + s.http.Addr)
-		if err := s.http.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Printf("Error starting server: %v", err)
+
+		s.log.Info("Starting server on " + s.http.Addr)
+		if err := s.http.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			s.log.Error("Error starting server: %v", err)
 		}
 	}()
 	<-ctx.Done()
@@ -52,14 +59,16 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	log.Println("Stopping server...")
+
+	s.log.Info("Stopping server...")
+
 	shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	if err := s.http.Shutdown(shutdownCtx); err != nil {
-		log.Printf("Error shutting down server: %v", err)
+		s.log.Error("Error shutting down server: %v", err)
 		return err
 	}
-	log.Println("Server stopped")
+	s.log.Info("Server stopped")
 	return nil
 }

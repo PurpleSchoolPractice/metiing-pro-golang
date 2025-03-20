@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
+
 	"log"
 	"os"
 	"os/signal"
@@ -13,6 +16,7 @@ import (
 )
 
 func main() {
+
 	// Запускаем Cobra для обработки командной строки
 	Execute()
 
