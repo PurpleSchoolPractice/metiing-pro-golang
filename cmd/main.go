@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+  
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
+
 	"log"
 	"os"
 	"os/signal"
@@ -15,8 +17,14 @@ import (
 )
 
 func main() {
-	cfg := configs.LoadConfig()
+	// Запускаем Cobra для обработки командной строки
+	Execute()
+
+	// Получаем конфигурацию после обработки командной строки
+	cfg := GetConfig()
+
 	logging := logger.NewLogger(cfg)
+
 	application := app.NewApp()
 	database := db.NewDB(cfg)
 
