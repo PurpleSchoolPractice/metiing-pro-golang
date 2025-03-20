@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-
+  
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
 
 	"log"
 	"os"
@@ -16,7 +17,6 @@ import (
 )
 
 func main() {
-
 	// Запускаем Cobra для обработки командной строки
 	Execute()
 
@@ -26,6 +26,7 @@ func main() {
 	logging := logger.NewLogger(cfg)
 
 	application := app.NewApp()
+	database := db.NewDB(cfg)
 
 	srv := server.NewServer(logging, application)
 
