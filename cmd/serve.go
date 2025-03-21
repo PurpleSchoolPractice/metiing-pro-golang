@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,7 +18,7 @@ var ServeCmd = &cobra.Command{
 	Short: "Запуск сервера приложения",
 	Long:  `Запуск HTTP-сервера приложения Meeting Pro.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg := GetConfig()
+		cfg := configs.LoadConfig()
 		logging := logger.NewLogger(cfg)
 		application := app.NewApp()
 
@@ -28,7 +28,7 @@ var ServeCmd = &cobra.Command{
 		defer stop()
 
 		if err := srv.Start(ctx); err != nil {
-			log.Println(err.Error())
+			logging.Error(err.Error())
 		}
 	},
 }

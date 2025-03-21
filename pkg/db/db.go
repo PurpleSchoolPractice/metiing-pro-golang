@@ -1,11 +1,10 @@
 package db
 
 import (
-	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/configs"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
 )
 
 // Storage определяет интерфейс для работы с хранилищем данных
@@ -26,13 +25,13 @@ type Db struct {
 var _ Storage = (*Db)(nil)
 
 // NewDB создает новое подключение к базе данных
-func NewDB(conf *configs.Config) (*Db, error) {
-	db, err := gorm.Open(postgres.Open(conf.DatabaseConfig.Dsn), &gorm.Config{})
+func NewDB(conf *configs.Config) *Db {
+	db, err := gorm.Open(postgres.Open(conf.Database.DSN), &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("ошибка подключения к базе данных: %w", err)
+		return nil
 		//TODO установить логирование
 	}
-	return &Db{db}, nil
+	return &Db{db}
 }
 
 // Create создает новую запись в базе данных

@@ -1,0 +1,27 @@
+package main
+
+import (
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/logger"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
+	"github.com/joho/godotenv"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"os"
+)
+
+func main() {
+	logging := logger.NewLogger(configs.LoadConfig())
+	err := godotenv.Load(".env")
+	if err != nil {
+		logging.Info(err.Error())
+	}
+	database, err := gorm.Open(postgres.Open(os.Getenv("DSN")), &gorm.Config{})
+	if err != nil {
+		logging.Info(err.Error())
+	}
+	err = database.AutoMigrate(&user.User{})
+	if err != nil {
+		logging.Info(err.Error())
+	}
+}
