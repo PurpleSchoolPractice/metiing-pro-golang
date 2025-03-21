@@ -21,6 +21,7 @@ type DatabaseConfig struct {
 	Username string
 	Password string
 	Database string
+	DSN      string
 }
 type LoggingConfig struct {
 	Level  string
@@ -42,6 +43,7 @@ func LoadConfig() *Config {
 			Username: os.Getenv("DATABASE_USERNAME"),
 			Password: os.Getenv("DATABASE_PASSWORD"),
 			Database: os.Getenv("DATABASE_NAME"),
+			DSN:      os.Getenv("DATABASE_DSN"),
 		},
 		Logging: LoggingConfig{
 			Level:  os.Getenv("LOGGING_LEVEL"),

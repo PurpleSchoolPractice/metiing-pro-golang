@@ -2,11 +2,10 @@ package main
 
 import (
 	"context"
-  
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
 
-	"log"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,21 +18,19 @@ import (
 func main() {
 	// Запускаем Cobra для обработки командной строки
 	Execute()
-
 	// Получаем конфигурацию после обработки командной строки
-	cfg := GetConfig()
-
+	cfg := configs.LoadConfig()
 	logging := logger.NewLogger(cfg)
-
 	application := app.NewApp()
 	database := db.NewDB(cfg)
 
-	srv := server.NewServer(logging, application)
+	//Repository
+	user.NewUserRepository(database)
 
+	srv := server.NewServer(logging, application)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-
 	if err := srv.Start(ctx); err != nil {
-		log.Println(err.Error())
+		logging.Info(err.Error())
 	}
 }
