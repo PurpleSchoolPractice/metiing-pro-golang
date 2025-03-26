@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/secret"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
 
@@ -26,6 +27,7 @@ func main() {
 
 	//Repository
 	user.NewUserRepository(database)
+	secret.NewSecretRepository(database)
 
 	srv := server.NewServer(logging, application)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
