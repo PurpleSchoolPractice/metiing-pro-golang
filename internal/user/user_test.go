@@ -46,16 +46,9 @@ func TestCreateUser(t *testing.T) {
 
 	newUser := user.NewUser("email@example.com", "password", "testuser")
 	createdUser, err := repo.Create(newUser)
-	if err != nil {
-		t.Errorf("Error creating user: %v", err)
-	}
-	if createdUser.Email != "email@example.com" {
-		t.Errorf("Exepected email email@example.com, got %s", createdUser.Email)
-	}
-
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("Error verifying expectations: %v", err)
-	}
+	require.NoError(t, err, "Create user failed")
+	require.Equal(t, createdUser, "Create user failed")
+	require.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestFindByEmail(t *testing.T) {
@@ -73,16 +66,9 @@ func TestFindByEmail(t *testing.T) {
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := user.NewUserRepository(dbWrapper)
 	foundUser, err := repo.FindByEmail("email@example.com")
-	if err != nil {
-		t.Errorf("Error fetching user: %v", err)
-	}
-	if foundUser.Email != "email@example.com" {
-		t.Errorf("Expected email email@example.com, got %s", foundUser.Email)
-	}
-
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("Error verifying expectations: %v", err)
-	}
+	require.NoError(t, err, "Error finding user")
+	require.NotNil(t, foundUser, "Expected to find user")
+	require.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestFindAllUsers(t *testing.T) {
@@ -100,16 +86,11 @@ func TestFindAllUsers(t *testing.T) {
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := user.NewUserRepository(dbWrapper)
 	users, err := repo.FindAllUsers()
-	if err != nil {
-		t.Errorf("Error fetching users: %v", err)
-	}
-	if len(users) != 1 {
-		t.Errorf("Expected 1 user, got %d", len(users))
-	}
+	require.NoError(t, err, "Error fetching users")
+	require.Len(t, users, 1)
+	require.Equal(t, users[0].Email, "email@example.com")
+	require.NoError(t, mock.ExpectationsWereMet())
 
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("Error verifying expectations: %v", err)
-	}
 }
 
 func TestUpdateUser(t *testing.T) {
@@ -156,11 +137,6 @@ func TestDeleteUser(t *testing.T) {
 		Email:    "email@example.com",
 	}
 	err := repo.Delete(userToDelete)
-	if err != nil {
-		t.Errorf("Error deleting user: %v", err)
-	}
-
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("Error verifying expectations: %v", err)
-	}
+	require.NoError(t, err, "Error deleting user")
+	require.NoError(t, mock.ExpectationsWereMet())
 }
