@@ -8,6 +8,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
+	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -33,7 +34,7 @@ func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
 
 func TestCreateUser(t *testing.T) {
 	gormDB, mock, cleanup := setupMockDB(t)
-	defer cleanup()
+	defer t.Cleanup(cleanup)
 	mock.ExpectBegin()
 	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "users"`)).
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), "testuser", "password", "email@example.com").
@@ -130,16 +131,11 @@ func TestUpdateUser(t *testing.T) {
 		Email:    "email@example.com",
 	}
 	updatedUser, err := repo.Update(userToUpdate)
-	if err != nil {
-		t.Errorf("Error updating user: %v", err)
-	}
-	if updatedUser.Username != "newusername" {
-		t.Errorf("expected newusername, %s", updatedUser.Username)
-	}
-
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("Error verifying expectations: %v", err)
-	}
+	require.NoError(t, err, "Error updating user")
+	require.Equal(t, "newusername", updatedUser.Username, "Updated username does not match")
+	require.Equal(t, "newpassword", updatedUser.Password, "Updated password does not match")
+	require.Equal(t, "email@example.com", updatedUser.Email, "Updated email does not match")
+	require.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestDeleteUser(t *testing.T) {
