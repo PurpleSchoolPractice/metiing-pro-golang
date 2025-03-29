@@ -8,32 +8,13 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db/mock"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
-	sqlDB, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("Not created sqlmock: %v", err)
-	}
-	dialector := postgres.New(postgres.Config{
-		Conn:                 sqlDB,
-		PreferSimpleProtocol: true,
-	})
-	gormDB, err := gorm.Open(dialector, &gorm.Config{})
-	if err != nil {
-		t.Fatalf("Not opened DB: %v", err)
-	}
-	cleanup := func() {
-		sqlDB.Close()
-	}
-	return gormDB, mock, cleanup
-}
-
 func TestCreateUser(t *testing.T) {
-	gormDB, mock, cleanup := setupMockDB(t)
+	gormDB, mock, cleanup := mock.SetupMockDB(t)
 	defer t.Cleanup(cleanup)
 	mock.ExpectBegin()
 	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "users"`)).
@@ -52,7 +33,7 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestFindByEmail(t *testing.T) {
-	gormDB, mock, cleanup := setupMockDB(t)
+	gormDB, mock, cleanup := mock.SetupMockDB(t)
 	defer cleanup()
 
 	fixedTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -72,7 +53,7 @@ func TestFindByEmail(t *testing.T) {
 }
 
 func TestFindAllUsers(t *testing.T) {
-	gormDB, mock, cleanup := setupMockDB(t)
+	gormDB, mock, cleanup := mock.SetupMockDB(t)
 	defer cleanup()
 
 	// Используем фиксированное время
@@ -94,7 +75,7 @@ func TestFindAllUsers(t *testing.T) {
 }
 
 func TestUpdateUser(t *testing.T) {
-	gormDB, mock, cleanup := setupMockDB(t)
+	gormDB, mock, cleanup := mock.SetupMockDB(t)
 	defer cleanup()
 	mock.ExpectBegin()
 	mock.ExpectQuery(regexp.QuoteMeta(`UPDATE "users" SET`)).
@@ -120,7 +101,7 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
-	gormDB, mock, cleanup := setupMockDB(t)
+	gormDB, mock, cleanup := mock.SetupMockDB(t)
 	defer cleanup()
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "users" SET "deleted_at"=`)).
