@@ -20,14 +20,14 @@ func main() {
 	// Запускаем Cobra для обработки командной строки
 	Execute()
 	// Получаем конфигурацию после обработки командной строки
-	cfg := configs.LoadConfig()
-	logging := logger.NewLogger(cfg)
+	confg := configs.LoadConfig()
+	logging := logger.NewLogger(confg)
 	application := app.NewApp()
-	database := db.NewDB(cfg)
+	database := db.NewDB(confg)
 
 	//Repository
 	user.NewUserRepository(database)
-	secret.NewSecretRepository(database)
+	secret.NewSecretRepository(database, logging)
 
 	srv := server.NewServer(logging, application)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
