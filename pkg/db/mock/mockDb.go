@@ -23,5 +23,6 @@ func SetupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
 	cleanup := func() {
 		sqlDB.Close()
 	}
+	defer cleanup()
 	return gormDB, mock, cleanup
 }

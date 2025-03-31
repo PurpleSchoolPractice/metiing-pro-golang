@@ -98,7 +98,7 @@ func TestGetSecretByID(t *testing.T) {
 
 func TestUpdateSecret(t *testing.T) {
 	gormDB, mockDB, cleanup := mock.SetupMockDB(t)
-	defer cleanup()
+	defer t.Cleanup(cleanup)
 
 	// Подготовка тестовых данных
 	secretRows := sqlmock.NewRows([]string{"id", "current_password"}).
@@ -158,7 +158,7 @@ func TestUpdateSecret(t *testing.T) {
 
 func TestDeleteSecret(t *testing.T) {
 	gormDB, mockDB, cleanup := mock.SetupMockDB(t)
-	defer cleanup()
+	defer t.Cleanup(cleanup)
 
 	t.Run("Successful delete", func(t *testing.T) {
 		mockDB.ExpectBegin()
@@ -178,7 +178,7 @@ func TestDeleteSecret(t *testing.T) {
 
 func TestListSecrets(t *testing.T) {
 	gormDB, mockDB, cleanup := mock.SetupMockDB(t)
-	defer cleanup()
+	defer t.Cleanup(cleanup)
 
 	rows := sqlmock.NewRows([]string{"id", "current_password"}).
 		AddRow(1, "Pass1").
