@@ -10,6 +10,7 @@ import (
 
 type Secret struct {
 	gorm.Model
+	UserID            uint               `json:"user_id" gorm:"index"`
 	CurrentPassword   string             `json:"currentPassword"`
 	PreviousPasswords []PreviousPassword `gorm:"foreignKey:SecretID"`
 }
@@ -21,12 +22,13 @@ type PreviousPassword struct {
 	CreatedAt time.Time
 }
 
-func NewSecret(password string) (*Secret, error) {
+func NewSecret(password string, userID uint) (*Secret, error) {
 	if err := ValidatePassword(password); err != nil {
 		return nil, err
 	}
 
 	return &Secret{
+		UserID:          userID,
 		CurrentPassword: password,
 	}, nil
 }
@@ -34,7 +36,7 @@ func NewSecret(password string) (*Secret, error) {
 // ValidatePassword проверяет соответствие пароля политике безопасности
 func ValidatePassword(password string) error {
 	if len(password) < 12 {
-		return errors.New("пароль должен содержать не менее 12 символов")
+		return errors.New("Password must be at least 12 characters long")
 	}
 
 	var hasDigit, hasUpper, hasSpecial bool
@@ -50,13 +52,13 @@ func ValidatePassword(password string) error {
 	}
 
 	if !hasDigit {
-		return errors.New("пароль должен содержать хотя бы одну цифру")
+		return errors.New("Password must contain at least one digit")
 	}
 	if !hasUpper {
-		return errors.New("пароль должен содержать хотя бы одну заглавную букву")
+		return errors.New("Password must contain at least one uppercase")
 	}
 	if !hasSpecial {
-		return errors.New("пароль должен содержать хотя бы один специальный символ")
+		return errors.New("Password must contain at least one special character")
 	}
 
 	return nil
