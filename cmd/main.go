@@ -2,20 +2,21 @@ package main
 
 import (
 	"context"
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/auth"
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/secret"
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
-	"github.com/go-chi/chi/v5"
-
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/app"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/auth"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/logger"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/secret"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/server"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/jwt"
+	"github.com/go-chi/chi/v5"
 )
 
 type AppComponents struct {
@@ -40,10 +41,16 @@ func setupApplication() *AppComponents {
 
 	// Инициализация слоя данных
 	userRepo := user.NewUserRepository(database)
-	secret.NewSecretRepository(database, log)
+	secretRepo := secret.NewSecretRepository(database, log)
+
+	// Создаем JWT сервис с настройками
+	jwtService := jwt.NewJWT(cfg.Auth.Secret)
+	// Устанавливаем время жизни токенов
+	jwtService.AccessTokenTTL = time.Minute * 4
+	jwtService.RefreshTokenTTL = time.Minute * 5
 
 	// Инициализация сервисов
-	authService := auth.NewAuthService(userRepo)
+	authService := auth.NewAuthService(userRepo, secretRepo, jwtService)
 
 	// Регистрация обработчиков
 	auth.NewAuthHandler(router, auth.AuthHandlerDeps{
