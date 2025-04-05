@@ -10,6 +10,7 @@ type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
 	Logging  LoggingConfig
+	Auth     AuthConfig
 }
 
 type ServerConfig struct {
@@ -26,6 +27,10 @@ type DatabaseConfig struct {
 type LoggingConfig struct {
 	Level  string
 	Format string
+}
+
+type AuthConfig struct {
+	Secret string
 }
 
 func LoadConfig() *Config {
@@ -48,6 +53,9 @@ func LoadConfig() *Config {
 		Logging: LoggingConfig{
 			Level:  os.Getenv("LOGGING_LEVEL"),
 			Format: os.Getenv("LOGGING_FORMAT"),
+		},
+		Auth: AuthConfig{
+			Secret: os.Getenv("KEY"),
 		},
 	}
 }

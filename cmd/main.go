@@ -2,37 +2,80 @@ package main
 
 import (
 	"context"
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/secret"
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
-
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/app"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/auth"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/logger"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/secret"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/server"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/jwt"
+	"github.com/go-chi/chi/v5"
 )
 
-func main() {
-	// Запускаем Cobra для обработки командной строки
-	Execute()
-	// Получаем конфигурацию после обработки командной строки
-	confg := configs.LoadConfig()
-	logging := logger.NewLogger(confg)
+type AppComponents struct {
+	Config *configs.Config
+	Logger *logger.Logger
+	App    *app.App
+	Router *chi.Mux
+	Server *server.Server
+}
+
+func setupApplication() *AppComponents {
+
+	// Инициализация конфигурации и логгера
+	cfg := configs.LoadConfig()
+	log := logger.NewLogger(cfg)
+
+	// Создание основных компонентов
 	application := app.NewApp()
-	database := db.NewDB(confg)
+	database := db.NewDB(cfg)
+	router := chi.NewRouter()
+	srv := server.NewServer(log, application, router)
 
-	//Repository
-	user.NewUserRepository(database)
-	secret.NewSecretRepository(database, logging)
+	// Инициализация слоя данных
+	userRepo := user.NewUserRepository(database)
+	secretRepo := secret.NewSecretRepository(database, log)
 
-	srv := server.NewServer(logging, application)
+	// Создаем JWT сервис с настройками
+	jwtService := jwt.NewJWT(cfg.Auth.Secret)
+	// Устанавливаем время жизни токенов
+	jwtService.AccessTokenTTL = time.Minute * 4
+	jwtService.RefreshTokenTTL = time.Minute * 5
+
+	// Инициализация сервисов
+	authService := auth.NewAuthService(userRepo, secretRepo, jwtService)
+
+	// Регистрация обработчиков
+	auth.NewAuthHandler(router, auth.AuthHandlerDeps{
+		Config:      cfg,
+		AuthService: authService,
+	})
+
+	return &AppComponents{
+		Config: cfg,
+		Logger: log,
+		App:    application,
+		Router: router,
+		Server: srv,
+	}
+}
+
+func main() {
+	// Запускаем Cobra
+	Execute()
+	components := setupApplication()
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if err := srv.Start(ctx); err != nil {
-		logging.Info(err.Error())
+
+	if err := components.Server.Start(ctx); err != nil {
+		components.Logger.Info(err.Error())
 	}
 }

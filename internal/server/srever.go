@@ -29,9 +29,7 @@ type Application interface {
 	// TODO
 }
 
-func NewServer(logger *logger.Logger, app Application) *Server {
-	router := chi.NewRouter()
-
+func NewServer(logger *logger.Logger, app Application, router *chi.Mux) *Server {
 	router.Use(middleware.RequestLogger(logger))
 
 	server := &Server{
