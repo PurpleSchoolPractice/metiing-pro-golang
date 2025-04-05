@@ -1,24 +1,24 @@
 package jwt
 
 import (
-	"log"
-	"os"
 	"testing"
 	"time"
+
+	"log"
 
 	"github.com/joho/godotenv"
 )
 
 func init() {
 	// Загружаем переменные из .env файла
-	if err := godotenv.Load(".env"); err != nil {
+	if err := godotenv.Load(); err != nil {
 		log.Print("No .env file found")
 	}
 }
 
 func TestGenerateTokenPair(t *testing.T) {
 	const email = "test@example.com"
-	jwtService := NewJWT(os.Getenv("KEY"))
+	jwtService := NewJWT("test-secret")
 
 	// Устанавливаем короткое время жизни для тестов
 	jwtService.AccessTokenTTL = time.Second * 10
@@ -43,7 +43,7 @@ func TestGenerateTokenPair(t *testing.T) {
 
 func TestParseAccessToken(t *testing.T) {
 	const email = "test@example.com"
-	jwtService := NewJWT(os.Getenv("KEY"))
+	jwtService := NewJWT("test-secret")
 
 	tokenPair, err := jwtService.GenerateTokenPair(JWTData{
 		Email: email,
@@ -66,7 +66,7 @@ func TestParseAccessToken(t *testing.T) {
 
 func TestParseRefreshToken(t *testing.T) {
 	const email = "test@example.com"
-	jwtService := NewJWT(os.Getenv("KEY"))
+	jwtService := NewJWT("test-secret")
 
 	tokenPair, err := jwtService.GenerateTokenPair(JWTData{
 		Email: email,
@@ -88,7 +88,7 @@ func TestParseRefreshToken(t *testing.T) {
 }
 
 func TestInvalidAccessToken(t *testing.T) {
-	jwtService := NewJWT(os.Getenv("KEY"))
+	jwtService := NewJWT("test-secret")
 
 	isValid, data := jwtService.ParseToken("invalid.token.format")
 
@@ -104,7 +104,7 @@ func TestInvalidAccessToken(t *testing.T) {
 func TestRefreshTokenType(t *testing.T) {
 	// Проверяем, что access token нельзя использовать как refresh token
 	const email = "test@example.com"
-	jwtService := NewJWT(os.Getenv("KEY"))
+	jwtService := NewJWT("test-secret")
 
 	tokenPair, err := jwtService.GenerateTokenPair(JWTData{
 		Email: email,
@@ -123,5 +123,37 @@ func TestRefreshTokenType(t *testing.T) {
 
 	if data != nil {
 		t.Fatal("Data should be nil when using access token as refresh token")
+	}
+}
+
+func TestTokenExpiration(t *testing.T) {
+
+	const email = "test@example.com"
+	jwtService := NewJWT("test-secret")
+
+	// Устанавливаем время жизни достаточное для выполнения теста
+	jwtService.AccessTokenTTL = time.Second
+
+	tokenPair, err := jwtService.GenerateTokenPair(JWTData{
+		Email: email,
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Проверяем, что токен сначала валиден
+	isValid, _ := jwtService.ParseToken(tokenPair.AccessToken)
+	if !isValid {
+		t.Fatal("Token should be valid initially")
+	}
+
+	// Ждем истечения срока действия
+	time.Sleep(time.Second * 2)
+
+	// Проверяем, что токен стал невалидным
+	isValid, _ = jwtService.ParseToken(tokenPair.AccessToken)
+	if isValid {
+		t.Fatal("Token should be invalid after expiration")
 	}
 }

@@ -1,10 +1,11 @@
 package mock
 
 import (
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"testing"
 )
 
 func SetupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
@@ -23,6 +24,5 @@ func SetupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
 	cleanup := func() {
 		sqlDB.Close()
 	}
-	defer cleanup()
 	return gormDB, mock, cleanup
 }
