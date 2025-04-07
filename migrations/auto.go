@@ -2,7 +2,10 @@ package main
 
 import (
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/event"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/eventParticipant"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/logger"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/secret"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
@@ -16,11 +19,16 @@ func main() {
 	if err != nil {
 		logging.Info(err.Error())
 	}
-	database, err := gorm.Open(postgres.Open(os.Getenv("DSN")), &gorm.Config{})
+	database, err := gorm.Open(postgres.Open(os.Getenv("DATABASE_DSN")), &gorm.Config{})
 	if err != nil {
 		logging.Info(err.Error())
 	}
-	err = database.AutoMigrate(&user.User{})
+	err = database.AutoMigrate(
+		&user.User{},
+		&event.Event{},
+		&secret.Secret{},
+		&eventParticipant.EventParticipant{},
+	)
 	if err != nil {
 		logging.Info(err.Error())
 	}
