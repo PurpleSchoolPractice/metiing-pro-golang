@@ -67,9 +67,13 @@ func (service *AuthService) Login(email, password string) (string, error) {
 	return existUser.Email, nil
 }
 
-func (service *AuthService) RefreshTokens(refreshToken string) (*jwt.TokenPair, error) {
-	valid, data := service.JWT.ParseRefreshToken(refreshToken)
-	if !valid || data == nil {
+func (service *AuthService) RefreshTokens(accessToken, refreshToken string) (*jwt.TokenPair, error) {
+	accessTokenValid, _ := service.JWT.ParseToken(accessToken)
+	if accessTokenValid {
+		return nil, errors.New(ErrAccessToken)
+	}
+	refreshTokenValid, data := service.JWT.ParseRefreshToken(refreshToken)
+	if !refreshTokenValid || data == nil {
 		return nil, errors.New(ErrInvalidRefreshToken)
 	}
 

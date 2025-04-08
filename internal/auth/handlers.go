@@ -58,6 +58,7 @@ func (handler *AuthHandler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := request.HandelBody[LoginRequest](w, r)
 		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		email, err := handler.AuthService.Login(body.Email, body.Password)
@@ -82,10 +83,11 @@ func (handler *AuthHandler) RefreshToken() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := request.HandelBody[RefreshTokenRequest](w, r)
 		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		tokenPair, err := handler.AuthService.RefreshTokens(body.RefreshToken)
+		tokenPair, err := handler.AuthService.RefreshTokens(body.RefreshToken, body.AccessToken)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
