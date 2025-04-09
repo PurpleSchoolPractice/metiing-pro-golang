@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
+	"github.com/go-chi/chi/v5"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,9 +21,10 @@ var ServeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := configs.LoadConfig()
 		logging := logger.NewLogger(cfg)
+		router := chi.NewRouter()
 		application := app.NewApp()
 
-		srv := server.NewServer(logging, application)
+		srv := server.NewServer(logging, application, router)
 
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()

@@ -2,9 +2,10 @@ package secret
 
 import (
 	"errors"
+	"time"
+
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/logger"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
-	"time"
 )
 
 type SecretRepository struct {
@@ -20,14 +21,14 @@ func NewSecretRepository(db *db.Db, logger *logger.Logger) *SecretRepository {
 }
 
 // Create создает новый секрет
-func (r *SecretRepository) Create(password string) (*Secret, error) {
+func (r *SecretRepository) Create(password string, userID uint) (*Secret, error) {
 	// Проверка пароля на соответствие политике
 	if err := ValidatePassword(password); err != nil {
 		r.logger.Error("Error validating password", "error", err.Error())
 		return nil, err
 	}
 
-	secret, err := NewSecret(password)
+	secret, err := NewSecret(password, userID)
 	if err != nil {
 		r.logger.Error("Error creating secret", "error", err.Error())
 		return nil, err
@@ -38,7 +39,7 @@ func (r *SecretRepository) Create(password string) (*Secret, error) {
 		return nil, err
 	}
 
-	r.logger.Info("Added new secret", "secret_id", secret.ID)
+	r.logger.Info("Added new secret", "secret_id", secret.ID, "user_id", userID)
 	return secret, nil
 }
 

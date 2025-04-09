@@ -23,12 +23,14 @@ func main() {
 	if err != nil {
 		logging.Info(err.Error())
 	}
+
 	err = database.AutoMigrate(
 		&user.User{},
 		&event.Event{},
 		&secret.Secret{},
 		&eventParticipant.EventParticipant{},
 	)
+  
 	if err != nil {
 		logging.Info(err.Error())
 	}
