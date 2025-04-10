@@ -34,7 +34,7 @@ func (repo *EventRepository) FindById(id uint) (*Event, error) {
 
 func (repo *EventRepository) FindAllByCreatorId(id uint) ([]Event, error) {
 	var events []Event
-	result := repo.DataBase.DB.Where("creatorID = ?", id).Find(&events)
+	result := repo.DataBase.DB.Where("creator_id = ?", id).Find(&events)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -55,4 +55,24 @@ func (repo *EventRepository) DeleteById(id uint) error {
 		return result.Error
 	}
 	return nil
+}
+
+// GetEventWithCreator получает событие вместе с информацией о создателе
+func (repo *EventRepository) GetEventWithCreator(id uint) (*Event, error) {
+	var event Event
+	result := repo.DataBase.DB.Preload("Creator").First(&event, id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &event, nil
+}
+
+// GetEventsWithCreators получает список событий с информацией о создателях
+func (repo *EventRepository) GetEventsWithCreators() ([]Event, error) {
+	var events []Event
+	result := repo.DataBase.DB.Preload("Creator").Find(&events)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return events, nil
 }
