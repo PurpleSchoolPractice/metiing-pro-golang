@@ -28,7 +28,12 @@ func TestCreateUser(t *testing.T) {
 	newUser := user.NewUser("email@example.com", "password", "testuser")
 	createdUser, err := repo.Create(newUser)
 	require.NoError(t, err, "Create user failed")
-	require.Equal(t, createdUser, "Create user failed")
+	require.Equal(t, "testuser", createdUser.Username, "Username does not match")
+	require.Equal(t, "password", createdUser.Password, "Password does not match")
+	require.Equal(t, "email@example.com", createdUser.Email, "Email does not match")
+	// Удаляем проверку временных меток, так как они зависят от текущего времени
+	require.NotNil(t, createdUser.CreatedAt, "CreatedAt should not be nil")
+	require.NotNil(t, createdUser.UpdatedAt, "UpdatedAt should not be nil")
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -78,9 +83,9 @@ func TestUpdateUser(t *testing.T) {
 	gormDB, mock, cleanup := mock.SetupMockDB(t)
 	defer cleanup()
 	mock.ExpectBegin()
-	mock.ExpectQuery(regexp.QuoteMeta(`UPDATE "users" SET`)).
-		WithArgs(sqlmock.AnyArg(), "newusername", "newpassword", "email@example.com", 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "users" SET "email"=$1,"password"=$2,"username"=$3,"updated_at"=$4 WHERE id = $5 AND "users"."deleted_at" IS NULL`)).
+		WithArgs("email@example.com", "newpassword", "newusername", sqlmock.AnyArg(), 1).
+		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
 	dbWrapper := &db.Db{DB: gormDB}
