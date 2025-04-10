@@ -1,12 +1,13 @@
 package eventParticipant
 
 import (
+	"testing"
+	"time"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestAddParticipant(t *testing.T) {
@@ -44,7 +45,7 @@ func TestGetEventParticipants(t *testing.T) {
 	gormDB, mock, cleanup := mock.SetupMockDB(t)
 	defer t.Cleanup(cleanup)
 	fixedTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
-	
+
 	// Мокаем запрос на получение участников
 	mock.ExpectQuery(`SELECT users.* FROM "users" JOIN event_participants ON users.id = event_participants.user_id WHERE event_participants.event_id = $1`).
 		WithArgs(uint(1)).
@@ -117,4 +118,4 @@ func TestIsParticipant(t *testing.T) {
 	require.NoError(t, err, "Check participant failed")
 	require.False(t, isParticipant, "User should not be a participant")
 	require.NoError(t, mock.ExpectationsWereMet())
-} 
+}

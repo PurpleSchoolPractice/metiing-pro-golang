@@ -16,4 +16,4 @@ type UserRepository interface {
 	FindByEmail(email string) (*User, error)
 	Update(user *User) (*User, error)
 	DeleteById(id uint) error
-} 
+}
