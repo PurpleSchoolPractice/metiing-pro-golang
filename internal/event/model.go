@@ -1,8 +1,9 @@
 package event
 
 import (
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Event struct {
@@ -10,16 +11,17 @@ type Event struct {
 	Title       string    `json:"title" gorm:"not null"`
 	Description string    `json:"description"`
 	EventDate   time.Time `json:"event_date" binding:"required"`
-	OwnerID     uint      `json:"ownerID"`
 	CreatorID   uint      `json:"creatorID" gorm:"not null"`
+
+	// Связи
+	Creator interface{} `gorm:"foreignKey:CreatorID"`
 }
 
-func NewEvent(title, description string, ownerID, creatorID uint, eventDate time.Time) *Event {
+func NewEvent(title, description string, creatorID uint, eventDate time.Time) *Event {
 	return &Event{
 		Title:       title,
 		Description: description,
 		EventDate:   eventDate,
-		OwnerID:     ownerID,
 		CreatorID:   creatorID,
 	}
 }

@@ -1,15 +1,18 @@
 package eventParticipant
 
-import (
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/event"
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
-)
-
 // EventParticipant представляет связь "многие ко многим" между событиями и пользователями.
 type EventParticipant struct {
 	EventID uint `gorm:"primaryKey"`
 	UserID  uint `gorm:"primaryKey"`
 
-	Event event.Event `gorm:"foreignKey:EventID;constraint:OnDelete:CASCADE;"`
-	User  user.User   `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
+	Event interface{} `gorm:"foreignKey:EventID;constraint:OnDelete:CASCADE;"`
+	User  interface{} `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
+}
+
+// NewEventParticipant создает новую связь между событием и участником
+func NewEventParticipant(eventID, userID uint) *EventParticipant {
+	return &EventParticipant{
+		EventID: eventID,
+		UserID:  userID,
+	}
 }
