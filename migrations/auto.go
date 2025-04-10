@@ -5,6 +5,8 @@ import (
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/logger"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/secret"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/event"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/eventParticipant"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -21,7 +23,12 @@ func main() {
 	if err != nil {
 		logging.Info(err.Error())
 	}
-	err = database.AutoMigrate(&user.User{}, &secret.Secret{})
+	err = database.AutoMigrate(
+		&user.User{},
+		&secret.Secret{},
+		&event.Event{},
+		&eventParticipant.EventParticipant{},
+	)
 	if err != nil {
 		logging.Info(err.Error())
 	}
