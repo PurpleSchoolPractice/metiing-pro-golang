@@ -178,7 +178,7 @@ func TestRefreshTokensSuccess(t *testing.T) {
 			AddRow(1, validEmail, "hashedpassword", "testuser"))
 
 	// Вызываем метод обновления токенов
-	newTokenPair, err := authService.RefreshTokens(tokenPair.RefreshToken)
+	newTokenPair, err := authService.RefreshTokens(tokenPair.AccessToken, tokenPair.RefreshToken)
 	if err != nil {
 		t.Fatalf("RefreshTokens error = %v", err)
 	}
@@ -200,7 +200,7 @@ func TestRefreshTokensInvalidToken(t *testing.T) {
 	defer cleanup()
 
 	// Вызываем метод обновления токенов с невалидным токеном
-	_, err := authService.RefreshTokens("invalid.refresh.token")
+	_, err := authService.RefreshTokens("invalid.access.token", "invalid.refresh.token")
 
 	// Проверка, что получили ожидаемую ошибку
 	if err == nil {
@@ -230,7 +230,7 @@ func TestRefreshTokensUserNotFound(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{}))
 
 	// Вызываем метод обновления токенов
-	_, err := authService.RefreshTokens(tokenPair.RefreshToken)
+	_, err := authService.RefreshTokens(tokenPair.AccessToken, tokenPair.RefreshToken)
 
 	// Проверка, что получили ожидаемую ошибку
 	if err == nil {
