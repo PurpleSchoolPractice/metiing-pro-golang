@@ -3,8 +3,8 @@ package event
 import (
 	"time"
 
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
 	"gorm.io/gorm"
-	"user"
 )
 
 type Event struct {
@@ -15,7 +15,7 @@ type Event struct {
 	CreatorID   uint      `json:"creator_id" gorm:"not null"`
 
 	// Связи
-	Creator     user.User `gorm:"foreignKey:CreatorID"`
+	Creator user.User `gorm:"foreignKey:CreatorID"`
 }
 
 func NewEvent(title, description string, creatorID uint, eventDate time.Time) *Event {
