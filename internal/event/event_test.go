@@ -13,7 +13,7 @@ import (
 
 func TestCreateEvent(t *testing.T) {
 	gormDB, mock, cleanup := mock.SetupMockDB(t)
-	defer t.Cleanup(cleanup)
+	t.Cleanup(cleanup)
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO "events"`).
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
@@ -22,6 +22,7 @@ func TestCreateEvent(t *testing.T) {
 	mock.ExpectCommit()
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventRepository(dbWrapper)
+	repo.DataBase.DB = repo.DataBase.DB.Model(&Event{}) // Установка модели таблицы
 	date, err := time.Parse("2006-01-02", "2025-05-09")
 	if err != nil {
 		t.Fatalf("Not possible to parse date: %v", err)
@@ -35,7 +36,7 @@ func TestCreateEvent(t *testing.T) {
 
 func TestFindEventByID(t *testing.T) {
 	gormDB, mock, cleanup := mock.SetupMockDB(t)
-	defer t.Cleanup(cleanup)
+	t.Cleanup(cleanup)
 	fixedTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	date, err := time.Parse("2006-01-02", "2025-05-09")
 	if err != nil {
@@ -57,6 +58,7 @@ func TestFindEventByID(t *testing.T) {
 
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventRepository(dbWrapper)
+	repo.DataBase.DB = repo.DataBase.DB.Model(&Event{}) // Установка модели таблицы
 	foundEvent, err := repo.FindById(uint(1))
 	require.NoError(t, err, "Error finding event")
 	require.NotNil(t, foundEvent, "Expected to find event")
@@ -70,7 +72,7 @@ func TestFindEventByID(t *testing.T) {
 
 func TestFindByCreatorID(t *testing.T) {
 	gormDB, mock, cleanup := mock.SetupMockDB(t)
-	defer t.Cleanup(cleanup)
+	t.Cleanup(cleanup)
 	fixedTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	date, err := time.Parse("2006-01-02", "2025-05-09")
 	if err != nil {
@@ -91,6 +93,7 @@ func TestFindByCreatorID(t *testing.T) {
 		WithArgs(uint(1)).WillReturnRows(rows)
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventRepository(dbWrapper)
+	repo.DataBase.DB = repo.DataBase.DB.Model(&Event{}) // Установка модели таблицы
 	findedEvents, err := repo.FindAllByCreatorId(uint(1))
 	require.NoError(t, err, "Error finding events")
 	require.Len(t, findedEvents, 1)
@@ -104,7 +107,7 @@ func TestFindByCreatorID(t *testing.T) {
 
 func TestUpdateEvent(t *testing.T) {
 	gormDB, mock, cleanup := mock.SetupMockDB(t)
-	defer t.Cleanup(cleanup)
+	t.Cleanup(cleanup)
 	mock.ExpectBegin()
 	mock.ExpectExec(`UPDATE "events" SET`).
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
@@ -117,6 +120,7 @@ func TestUpdateEvent(t *testing.T) {
 	}
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventRepository(dbWrapper)
+	repo.DataBase.DB = repo.DataBase.DB.Model(&Event{}) // Установка модели таблицы
 	eventUpdate := &Event{
 		Title:       "newtestevent",
 		Description: "newdescription",
@@ -133,13 +137,14 @@ func TestUpdateEvent(t *testing.T) {
 
 func TestDeleteEventByID(t *testing.T) {
 	gormDB, mock, cleanup := mock.SetupMockDB(t)
-	defer t.Cleanup(cleanup)
+	t.Cleanup(cleanup)
 	mock.ExpectBegin()
 	mock.ExpectExec(`DELETE FROM "events" WHERE id = $1`).
 		WithArgs(uint(1)).WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventRepository(dbWrapper)
+	repo.DataBase.DB = repo.DataBase.DB.Model(&Event{}) // Установка модели таблицы
 	err := repo.DeleteById(uint(1))
 	require.NoError(t, err, "Error deleting event")
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -170,6 +175,7 @@ func TestGetEventWithCreator(t *testing.T) {
 
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventRepository(dbWrapper)
+	repo.DataBase.DB = repo.DataBase.DB.Model(&Event{}) // Установка модели таблицы
 	event, err := repo.GetEventWithCreator(uint(1))
 	require.NoError(t, err, "Error getting event with creator")
 	require.NotNil(t, event, "Event should not be nil")

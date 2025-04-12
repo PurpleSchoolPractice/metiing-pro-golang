@@ -16,6 +16,9 @@ func NewEventRepository(dataBase *db.Db) *EventRepository {
 }
 
 func (repo *EventRepository) Create(event *Event) (*Event, error) {
+	if repo.DataBase.DB.Statement.Model == nil {
+		repo.DataBase.DB = repo.DataBase.DB.Model(&Event{})
+	}
 	result := repo.DataBase.DB.Create(event)
 	if result.Error != nil {
 		return nil, result.Error
@@ -24,6 +27,9 @@ func (repo *EventRepository) Create(event *Event) (*Event, error) {
 }
 
 func (repo *EventRepository) FindById(id uint) (*Event, error) {
+	if repo.DataBase.DB.Statement.Model == nil {
+		repo.DataBase.DB = repo.DataBase.DB.Model(&Event{})
+	}
 	var event Event
 	result := repo.DataBase.DB.First(&event, id)
 	if result.Error != nil {
@@ -33,6 +39,9 @@ func (repo *EventRepository) FindById(id uint) (*Event, error) {
 }
 
 func (repo *EventRepository) FindAllByCreatorId(id uint) ([]Event, error) {
+	if repo.DataBase.DB.Statement.Model == nil {
+		repo.DataBase.DB = repo.DataBase.DB.Model(&Event{})
+	}
 	var events []Event
 	result := repo.DataBase.DB.Where("creator_id = ?", id).Find(&events)
 	if result.Error != nil {
@@ -42,6 +51,9 @@ func (repo *EventRepository) FindAllByCreatorId(id uint) ([]Event, error) {
 }
 
 func (repo *EventRepository) Update(event *Event) (*Event, error) {
+	if repo.DataBase.DB.Statement.Model == nil {
+		repo.DataBase.DB = repo.DataBase.DB.Model(&Event{})
+	}
 	result := repo.DataBase.DB.Clauses(clause.Returning{}).Updates(event)
 	if result.Error != nil {
 		return nil, result.Error
@@ -50,6 +62,9 @@ func (repo *EventRepository) Update(event *Event) (*Event, error) {
 }
 
 func (repo *EventRepository) DeleteById(id uint) error {
+	if repo.DataBase.DB.Statement.Model == nil {
+		repo.DataBase.DB = repo.DataBase.DB.Model(&Event{})
+	}
 	result := repo.DataBase.DB.Delete(&Event{}, id)
 	if result.Error != nil {
 		return result.Error
@@ -59,6 +74,9 @@ func (repo *EventRepository) DeleteById(id uint) error {
 
 // GetEventWithCreator получает событие вместе с информацией о создателе
 func (repo *EventRepository) GetEventWithCreator(id uint) (*Event, error) {
+	if repo.DataBase.DB.Statement.Model == nil {
+		repo.DataBase.DB = repo.DataBase.DB.Model(&Event{})
+	}
 	var event Event
 	result := repo.DataBase.DB.Preload("Creator").First(&event, id)
 	if result.Error != nil {
@@ -69,6 +87,9 @@ func (repo *EventRepository) GetEventWithCreator(id uint) (*Event, error) {
 
 // GetEventsWithCreators получает список событий с информацией о создателях
 func (repo *EventRepository) GetEventsWithCreators() ([]Event, error) {
+	if repo.DataBase.DB.Statement.Model == nil {
+		repo.DataBase.DB = repo.DataBase.DB.Model(&Event{})
+	}
 	var events []Event
 	result := repo.DataBase.DB.Preload("Creator").Find(&events)
 	if result.Error != nil {

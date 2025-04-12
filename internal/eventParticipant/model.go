@@ -2,6 +2,7 @@ package eventParticipant
 
 import (
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/event"
 	"gorm.io/gorm"
 )
 
@@ -12,8 +13,8 @@ type EventParticipant struct {
 	UserID  uint `json:"user_id" gorm:"not null"`
 
 	// Связи
-	Event interface{} `gorm:"foreignKey:EventID"`
-	User  *user.User  `gorm:"foreignKey:UserID"`
+	Event *event.Event `gorm:"foreignKey:EventID"`
+	User  *user.User   `gorm:"foreignKey:UserID"`
 }
 
 // NewEventParticipant создает новую связь между событием и участником

@@ -41,7 +41,7 @@ func TestCreateSecret(t *testing.T) {
 		loggerMock := mockLogger()
 		repo := secret.NewSecretRepository(&db.Db{DB: gormDB}, loggerMock)
 
-		createdSecret, err := repo.Create("ValidPass123!")
+		createdSecret, err := repo.Create("ValidPass123!", 1)
 		require.NoError(t, err)
 		require.Equal(t, uint(1), createdSecret.ID)
 		require.Equal(t, "ValidPass123!", createdSecret.CurrentPassword)
@@ -53,7 +53,7 @@ func TestCreateSecret(t *testing.T) {
 		loggerMock := mockLogger()
 		repo := secret.NewSecretRepository(&db.Db{DB: gormDB}, loggerMock)
 
-		_, err := repo.Create("short")
+		_, err := repo.Create("short", 1)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "не менее 12 символов")
 	})
