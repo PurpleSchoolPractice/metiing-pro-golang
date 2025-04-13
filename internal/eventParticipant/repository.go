@@ -67,10 +67,23 @@ func (repo *EventParticipantRepository) GetUserEvents(userID uint) ([]types.Even
 
 // IsParticipant проверяет, является ли пользователь участником события
 func (repo *EventParticipantRepository) IsParticipant(eventID, userID uint) (bool, error) {
-	repo.DataBase.DB = repo.DataBase.DB.Model(&EventParticipant{}) // Установка модели таблицы
+	repo.DataBase.DB = repo.DataBase.DB.Model(&EventParticipant{})
 	var count int64
 	result := repo.DataBase.DB.
 		Where("event_id = ? AND user_id = ?", eventID, userID).
+		Count(&count)
+	if result.Error != nil {
+		return false, result.Error
+	}
+	return count > 0, nil
+}
+
+// IsEventCreatorById проверяет, является ли пользователь создателем события
+func (repo *EventParticipantRepository) IsEventCreatorById(eventID, userID uint) (bool, error) {
+	repo.DataBase.DB = repo.DataBase.DB.Table("events")
+	var count int64
+	result := repo.DataBase.DB.
+		Where("id = ? AND creator_id = ?", eventID, userID).
 		Count(&count)
 	if result.Error != nil {
 		return false, result.Error

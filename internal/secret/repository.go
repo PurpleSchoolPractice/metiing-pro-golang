@@ -13,6 +13,7 @@ type SecretRepository struct {
 	logger   *logger.Logger
 }
 
+// NewSecretRepository - конструктор репозитория секретов
 func NewSecretRepository(db *db.Db, logger *logger.Logger) *SecretRepository {
 	return &SecretRepository{
 		DataBase: db,

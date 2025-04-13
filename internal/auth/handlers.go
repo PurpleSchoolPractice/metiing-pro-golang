@@ -20,6 +20,7 @@ type AuthHandlerDeps struct {
 	*AuthService
 }
 
+// NewAuthHandler инициализирует хендлеры для аутентификации
 func NewAuthHandler(mux *chi.Mux, deps AuthHandlerDeps) {
 	handler := &AuthHandler{
 		Config:      deps.Config,
@@ -30,6 +31,7 @@ func NewAuthHandler(mux *chi.Mux, deps AuthHandlerDeps) {
 	mux.HandleFunc("POST /auth/refresh", handler.RefreshToken())
 }
 
+// Register регистрирует пользователя
 func (handler *AuthHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := request.HandelBody[RegisterRequest](w, r)
@@ -54,6 +56,7 @@ func (handler *AuthHandler) Register() http.HandlerFunc {
 	}
 }
 
+// Login авторизует пользователя
 func (handler *AuthHandler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := request.HandelBody[LoginRequest](w, r)
