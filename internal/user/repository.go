@@ -2,7 +2,6 @@ package user
 
 import (
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
-	"gorm.io/gorm/clause"
 )
 
 type UserRepository struct {
@@ -16,6 +15,7 @@ func NewUserRepository(dataBase *db.Db) *UserRepository {
 }
 
 func (repo *UserRepository) Create(user *User) (*User, error) {
+	repo.DataBase.DB = repo.DataBase.DB.Model(&User{}) // Установка модели таблицы
 	result := repo.DataBase.DB.Create(user)
 	if result.Error != nil {
 		return nil, result.Error
@@ -24,6 +24,7 @@ func (repo *UserRepository) Create(user *User) (*User, error) {
 }
 
 func (repo *UserRepository) FindByEmail(email string) (*User, error) {
+	repo.DataBase.DB = repo.DataBase.DB.Model(&User{}) // Установка модели таблицы
 	var user User
 	result := repo.DataBase.DB.Where("email = ?", email).First(&user)
 	if result.Error != nil {
@@ -33,6 +34,7 @@ func (repo *UserRepository) FindByEmail(email string) (*User, error) {
 }
 
 func (repo *UserRepository) FindAllUsers() ([]User, error) {
+	repo.DataBase.DB = repo.DataBase.DB.Model(&User{}) // Установка модели таблицы
 	var users []User
 	result := repo.DataBase.DB.Find(&users)
 	if result.Error != nil {
@@ -42,7 +44,12 @@ func (repo *UserRepository) FindAllUsers() ([]User, error) {
 }
 
 func (repo *UserRepository) Update(user *User) (*User, error) {
-	result := repo.DataBase.DB.Clauses(clause.Returning{}).Updates(user)
+	repo.DataBase.DB = repo.DataBase.DB.Model(&User{}) // Установка модели таблицы
+	result := repo.DataBase.DB.Model(&User{}).Where("id = ?", user.ID).Updates(map[string]interface{}{
+		"username": user.Username,
+		"password": user.Password,
+		"email":    user.Email,
+	})
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -50,6 +57,7 @@ func (repo *UserRepository) Update(user *User) (*User, error) {
 }
 
 func (repo *UserRepository) Delete(user *User) error {
+	repo.DataBase.DB = repo.DataBase.DB.Model(&User{}) // Установка модели таблицы
 	result := repo.DataBase.DB.Delete(user)
 	if result.Error != nil {
 		return result.Error
