@@ -15,6 +15,7 @@ type AuthService struct {
 	JWT              *jwt.JWT
 }
 
+// NewAuthService - конструктор сервиса авторизации
 func NewAuthService(
 	userRepository *user.UserRepository,
 	secretRepository *secret.SecretRepository,
@@ -27,6 +28,7 @@ func NewAuthService(
 	}
 }
 
+// Register - регистрация пользователя
 func (service *AuthService) Register(email, password, username string) (string, error) {
 	existUser, _ := service.UserRepository.FindByEmail(email)
 	if existUser != nil {
@@ -55,6 +57,7 @@ func (service *AuthService) Register(email, password, username string) (string, 
 	return newUser.Email, nil
 }
 
+// Login - авторизация пользователя
 func (service *AuthService) Login(email, password string) (string, error) {
 	existUser, _ := service.UserRepository.FindByEmail(email)
 	if existUser == nil {
@@ -67,6 +70,7 @@ func (service *AuthService) Login(email, password string) (string, error) {
 	return existUser.Email, nil
 }
 
+// RefreshTokens - обновление токенов
 func (service *AuthService) RefreshTokens(accessToken, refreshToken string) (*jwt.TokenPair, error) {
 	accessTokenValid, _ := service.JWT.ParseToken(accessToken)
 	if accessTokenValid {

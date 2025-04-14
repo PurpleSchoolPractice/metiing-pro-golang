@@ -25,6 +25,7 @@ type PrettyHandler struct {
 	l *log.Logger
 }
 
+// Handle writes the record to the standard logger.
 func (h *PrettyHandler) Handle(ctx context.Context, r slog.Record) error {
 	level := r.Level.String() + ":"
 	switch r.Level {
