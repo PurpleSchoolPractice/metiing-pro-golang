@@ -58,16 +58,22 @@ func (service *AuthService) Register(email, password, username string) (string, 
 }
 
 // Login - авторизация пользователя
-func (service *AuthService) Login(email, password string) (string, error) {
-	existUser, _ := service.UserRepository.FindByEmail(email)
-	if existUser == nil {
-		return "", errors.New(ErrWrongCredentials)
+func (service *AuthService) Login(email, password string) (jwt.JWTData, error) {
+	user, err := service.UserRepository.FindByEmail(email)
+	if err != nil || user == nil {
+		return jwt.JWTData{}, errors.New(ErrWrongCredentials)
 	}
-	err := bcrypt.CompareHashAndPassword([]byte(existUser.Password), []byte(password))
-	if err != nil {
-		return "", errors.New(ErrWrongCredentials)
+	if err := bcrypt.CompareHashAndPassword(
+		[]byte(user.Password), []byte(password),
+	); err != nil {
+		return jwt.JWTData{}, errors.New(ErrWrongCredentials)
 	}
-	return existUser.Email, nil
+
+	// Передаём и ID, и email
+	return jwt.JWTData{
+		UserID: user.ID,
+		Email:  user.Email,
+	}, nil
 }
 
 // RefreshTokens - обновление токенов

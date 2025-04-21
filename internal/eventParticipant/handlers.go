@@ -6,6 +6,7 @@ import (
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/jwt"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/middleware"
 	"github.com/go-chi/chi/v5"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -49,8 +50,11 @@ func (h *EventParticipantHandler) AddEventParticipant() http.HandlerFunc {
 			return
 		}
 
-		// Проверка, является ли пользователь создателем события
 		userID := event.GetUserIDFromContext(r.Context())
+		log.Printf(
+			"AddEvent: ctxUserID=%d, req.EventID=%d, req.UserID=%d",
+			userID, req.EventID, req.UserID,
+		)
 		isCreator, err := h.EventParticipantRepository.IsEventCreatorById(req.EventID, userID)
 		if err != nil {
 			http.Error(w, "Error checking if user is creator of event", http.StatusInternalServerError)

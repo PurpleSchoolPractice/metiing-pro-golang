@@ -64,21 +64,23 @@ func (handler *AuthHandler) Login() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		email, err := handler.AuthService.Login(body.Email, body.Password)
+
+		jwtData, err := handler.AuthService.Login(body.Email, body.Password)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
-		tokenPair, err := handler.AuthService.JWT.GenerateTokenPair(jwt.JWTData{Email: email})
+
+		tokenPair, err := handler.AuthService.JWT.GenerateTokenPair(jwtData)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		data := LoginResponse{
+
+		res.JsonResponse(w, LoginResponse{
 			AccessToken:  tokenPair.AccessToken,
 			RefreshToken: tokenPair.RefreshToken,
-		}
-		res.JsonResponse(w, data, http.StatusOK)
+		}, http.StatusOK)
 	}
 }
 

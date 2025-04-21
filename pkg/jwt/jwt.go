@@ -7,7 +7,8 @@ import (
 )
 
 type JWTData struct {
-	Email string
+	Email  string
+	UserID uint
 }
 
 type TokenPair struct {
@@ -31,14 +32,11 @@ func NewJWT(secret string) *JWT {
 
 func (j *JWT) generateToken(data JWTData) (string, error) {
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"email": data.Email,
-		"exp":   time.Now().Add(j.AccessTokenTTL).Unix(),
+		"email":   data.Email,
+		"user_id": data.UserID,
+		"exp":     time.Now().Add(j.AccessTokenTTL).Unix(),
 	})
-	s, err := t.SignedString([]byte(j.Secret))
-	if err != nil {
-		return "", err
-	}
-	return s, nil
+	return t.SignedString([]byte(j.Secret))
 }
 
 func (j *JWT) generateRefreshToken(data JWTData) (string, error) {
@@ -75,12 +73,22 @@ func (j *JWT) ParseToken(token string) (bool, *JWTData) {
 	t, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		return []byte(j.Secret), nil
 	})
-	if err != nil {
+	if err != nil || !t.Valid {
 		return false, nil
 	}
-	email := t.Claims.(jwt.MapClaims)["email"].(string)
-	return t.Valid, &JWTData{
-		Email: email,
+
+	claims := t.Claims.(jwt.MapClaims)
+
+	email, ok1 := claims["email"].(string)
+	userIDFloat, ok2 := claims["user_id"].(float64) // JWT хранит числа как float64
+
+	if !ok1 || !ok2 {
+		return false, nil
+	}
+
+	return true, &JWTData{
+		Email:  email,
+		UserID: uint(userIDFloat),
 	}
 }
 

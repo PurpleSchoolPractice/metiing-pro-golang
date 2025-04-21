@@ -1,7 +1,9 @@
 package user
 
 import (
+	"errors"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
+	"gorm.io/gorm"
 )
 
 type UserRepository struct {
@@ -16,24 +18,30 @@ func NewUserRepository(dataBase *db.Db) *UserRepository {
 }
 
 // Create создает новую запись в базе данных
-func (repo *UserRepository) Create(user *User) (*User, error) {
-	repo.DataBase.DB = repo.DataBase.DB.Model(&User{})
-	result := repo.DataBase.DB.Create(user)
-	if result.Error != nil {
-		return nil, result.Error
+func (r *UserRepository) Create(u *User) (*User, error) {
+	if err := r.DataBase.
+		Session(&gorm.Session{NewDB: true}).
+		Create(u).Error; err != nil {
+		return nil, err
 	}
-	return user, nil
+	return u, nil
 }
 
 // FindByEmail находит пользователя по указанному адресу электронной почты в базе данных.
-func (repo *UserRepository) FindByEmail(email string) (*User, error) {
-	repo.DataBase.DB = repo.DataBase.DB.Model(&User{})
-	var user User
-	result := repo.DataBase.DB.Where("email = ?", email).First(&user)
-	if result.Error != nil {
-		return nil, result.Error
+func (r *UserRepository) FindByEmail(email string) (*User, error) {
+	var u User
+	err := r.DataBase.
+		Session(&gorm.Session{NewDB: true}).
+		Where("email = ?", email).
+		First(&u).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
 	}
-	return &user, nil
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
 }
 
 // FindAllUsers находит всех пользователей в базе данных.

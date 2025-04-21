@@ -1,12 +1,15 @@
 package event
 
-import "context"
+import (
+	"context"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/middleware"
+)
 
-// GetUserIDFromContext извлекает ID пользователя из контекста запроса
 func GetUserIDFromContext(ctx context.Context) uint {
-	userID, ok := ctx.Value("userID").(uint)
-	if !ok {
-		return 0 // Возвращаем 0, если пользователь не найден в контексте
+	if v := ctx.Value(middleware.ContextUserIDKey); v != nil {
+		if id, ok := v.(uint); ok {
+			return id
+		}
 	}
-	return userID
+	return 0
 }

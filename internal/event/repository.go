@@ -19,7 +19,9 @@ func NewEventRepository(dataBase *db.Db) *EventRepository {
 
 // Create создает новое событие в базе данных
 func (repo *EventRepository) Create(event *Event) (*Event, error) {
-	db := repo.DataBase.DB.Session(&gorm.Session{NewDB: true})
+	db := repo.DataBase.DB.
+		Session(&gorm.Session{NewDB: true}).
+		Model(&Event{})
 	result := db.Model(&Event{}).Create(event)
 	if result.Error != nil {
 		return nil, result.Error
