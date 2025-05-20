@@ -15,6 +15,7 @@ type AuthService struct {
 	JWT              *jwt.JWT
 }
 
+// NewAuthService - конструктор сервиса авторизации
 func NewAuthService(
 	userRepository *user.UserRepository,
 	secretRepository *secret.SecretRepository,
@@ -27,6 +28,7 @@ func NewAuthService(
 	}
 }
 
+// Register - регистрация пользователя
 func (service *AuthService) Register(email, password, username string) (string, error) {
 	existUser, _ := service.UserRepository.FindByEmail(email)
 	if existUser != nil {
@@ -55,18 +57,26 @@ func (service *AuthService) Register(email, password, username string) (string, 
 	return newUser.Email, nil
 }
 
-func (service *AuthService) Login(email, password string) (string, error) {
-	existUser, _ := service.UserRepository.FindByEmail(email)
-	if existUser == nil {
-		return "", errors.New(ErrWrongCredentials)
+// Login - авторизация пользователя
+func (service *AuthService) Login(email, password string) (jwt.JWTData, error) {
+	user, err := service.UserRepository.FindByEmail(email)
+	if err != nil || user == nil {
+		return jwt.JWTData{}, errors.New(ErrWrongCredentials)
 	}
-	err := bcrypt.CompareHashAndPassword([]byte(existUser.Password), []byte(password))
-	if err != nil {
-		return "", errors.New(ErrWrongCredentials)
+	if err := bcrypt.CompareHashAndPassword(
+		[]byte(user.Password), []byte(password),
+	); err != nil {
+		return jwt.JWTData{}, errors.New(ErrWrongCredentials)
 	}
-	return existUser.Email, nil
+
+	// Передаём и ID, и email
+	return jwt.JWTData{
+		UserID: user.ID,
+		Email:  user.Email,
+	}, nil
 }
 
+// RefreshTokens - обновление токенов
 func (service *AuthService) RefreshTokens(accessToken, refreshToken string) (*jwt.TokenPair, error) {
 	accessTokenValid, _ := service.JWT.ParseToken(accessToken)
 	if accessTokenValid {

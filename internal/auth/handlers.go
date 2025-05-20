@@ -20,6 +20,7 @@ type AuthHandlerDeps struct {
 	*AuthService
 }
 
+// NewAuthHandler инициализирует хендлеры для аутентификации
 func NewAuthHandler(mux *chi.Mux, deps AuthHandlerDeps) {
 	handler := &AuthHandler{
 		Config:      deps.Config,
@@ -30,6 +31,7 @@ func NewAuthHandler(mux *chi.Mux, deps AuthHandlerDeps) {
 	mux.HandleFunc("POST /auth/refresh", handler.RefreshToken())
 }
 
+// Register регистрирует пользователя
 func (handler *AuthHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := request.HandelBody[RegisterRequest](w, r)
@@ -54,6 +56,7 @@ func (handler *AuthHandler) Register() http.HandlerFunc {
 	}
 }
 
+// Login авторизует пользователя
 func (handler *AuthHandler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := request.HandelBody[LoginRequest](w, r)
@@ -61,21 +64,23 @@ func (handler *AuthHandler) Login() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		email, err := handler.AuthService.Login(body.Email, body.Password)
+
+		jwtData, err := handler.AuthService.Login(body.Email, body.Password)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
-		tokenPair, err := handler.AuthService.JWT.GenerateTokenPair(jwt.JWTData{Email: email})
+
+		tokenPair, err := handler.AuthService.JWT.GenerateTokenPair(jwtData)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		data := LoginResponse{
+
+		res.JsonResponse(w, LoginResponse{
 			AccessToken:  tokenPair.AccessToken,
 			RefreshToken: tokenPair.RefreshToken,
-		}
-		res.JsonResponse(w, data, http.StatusOK)
+		}, http.StatusOK)
 	}
 }
 
