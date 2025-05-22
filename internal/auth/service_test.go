@@ -101,8 +101,8 @@ func TestLoginSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Login error = %v", err)
 	}
-	if email != "test@example.com" {
-		t.Fatalf("email = %s, want %s", email, "test@example.com")
+	if email.Email != "test@example.com" {
+		t.Fatalf("email = %s, want %s", email.Email, "test@example.com")
 	}
 
 	// Проверяем, что все ожидания были выполнены
