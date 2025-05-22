@@ -14,6 +14,7 @@ type UserRepository interface {
 	Create(user *User) (*User, error)
 	FindById(id uint) (*User, error)
 	FindByEmail(email string) (*User, error)
+	FindAllUsers() ([]User, error)
 	Update(user *User) (*User, error)
 	DeleteById(id uint) error
 }
