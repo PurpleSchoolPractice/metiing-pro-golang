@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/event"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/eventParticipant"
@@ -10,7 +12,6 @@ import (
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"os"
 )
 
 func main() {
@@ -23,6 +24,7 @@ func main() {
 	if err != nil {
 		logging.Info(err.Error())
 	}
+
 	err = database.AutoMigrate(
 		&user.User{},
 		&secret.Secret{},

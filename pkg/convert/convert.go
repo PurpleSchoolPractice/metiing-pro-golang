@@ -11,9 +11,12 @@ import (
 // преобразуем ID в UINT
 func ConvertID(r *http.Request) (uint, error) {
 	strUserID := chi.URLParam(r, "id")
-	userID, err := strconv.Atoi(strUserID)
+
+	idUint, err := strconv.ParseUint(strUserID, 10, 64)
 	if err != nil {
-		return 0, errors.New("failed to convert")
+
+		return 0, errors.New("not a valid ID")
 	}
-	return uint(userID), nil
+	id := uint(idUint)
+	return id, nil
 }

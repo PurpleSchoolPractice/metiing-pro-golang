@@ -3,7 +3,6 @@ package user
 import (
 	"net/http"
 
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/convert"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/jwt"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/middleware"
@@ -15,18 +14,15 @@ import (
 
 type UserHandlerDeps struct {
 	UserRepository *UserRepository
-	Config         *configs.Config
 	JWTService     *jwt.JWT
 }
 type UserHandler struct {
 	UserRepository *UserRepository
-	Config         *configs.Config
 	JWTService     *jwt.JWT
 }
 
 func NewUserHandler(mux *chi.Mux, deps UserHandlerDeps) {
 	handler := &UserHandler{
-		Config:         deps.Config,
 		UserRepository: deps.UserRepository,
 		JWTService:     deps.JWTService,
 	}
@@ -57,6 +53,7 @@ func (handler *UserHandler) GetUserByID() http.HandlerFunc {
 		id, err := convert.ConvertID(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 		user, err := handler.UserRepository.FindByid(id)
 		if err != nil {
@@ -94,7 +91,7 @@ func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 		}
 		updatedUser, err := handler.UserRepository.Update(user)
 		if err != nil {
-			http.Error(w, "We can't to update User %d", int(userId))
+			http.Error(w, err.Error(), 200)
 			return
 		}
 		res.JsonResponse(w, updatedUser, 200)

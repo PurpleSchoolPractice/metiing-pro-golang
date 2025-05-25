@@ -60,7 +60,6 @@ func setupApplication() *AppComponents {
 		AuthService: authService,
 	})
 	user.NewUserHandler(router, user.UserHandlerDeps{
-		Config:         cfg,
 		UserRepository: userRepo,
 		JWTService:     jwtService,
 	})
@@ -94,7 +93,7 @@ func setupApplication() *AppComponents {
 
 func main() {
 	// Запускаем Cobra
-	//Execute()
+	Execute()
 	components := setupApplication()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

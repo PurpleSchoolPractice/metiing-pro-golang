@@ -1,10 +1,11 @@
 package user_test
 
 import (
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
 	"regexp"
 	"testing"
 	"time"
+
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
