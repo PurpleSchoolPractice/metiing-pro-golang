@@ -46,12 +46,12 @@ func TestRegisterSuccess(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	mockDB.ExpectCommit()
 
-	email, err := authService.Register("test@example.com", "Password123!", "testuser")
+	user, err := authService.Register("test@example.com", "Password123!", "testuser")
 	if err != nil {
 		t.Fatalf("Register error = %v", err)
 	}
-	if email != "test@example.com" {
-		t.Fatalf("email = %s, want %s", email, "test@example.com")
+	if user.Email != "test@example.com" {
+		t.Fatalf("email = %s, want %s", user.Email, "test@example.com")
 	}
 
 	// Проверяем, что все ожидания были выполнены

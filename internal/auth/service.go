@@ -29,17 +29,17 @@ func NewAuthService(
 }
 
 // Register - регистрация пользователя
-func (service *AuthService) Register(email, password, username string) (string, error) {
+func (service *AuthService) Register(email, password, username string) (*user.User, error) {
 	existUser, _ := service.UserRepository.FindByEmail(email)
 	if existUser != nil {
-		return "", errors.New(ErrUserExists)
+		return nil, errors.New(ErrUserExists)
 	}
 	if err := secret.ValidatePassword(password); err != nil {
-		return "", errors.New(InvalidPassword)
+		return nil, errors.New(InvalidPassword)
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	newUser := user.User{
 		Email:    email,
@@ -48,13 +48,13 @@ func (service *AuthService) Register(email, password, username string) (string, 
 	}
 	createdUser, err := service.UserRepository.Create(&newUser)
 	if err != nil {
-		return "", errors.New(ErrUserExists)
+		return nil, errors.New(ErrUserExists)
 	}
 	_, err = service.SecretRepository.Create(string(hashedPassword), createdUser.ID)
 	if err != nil {
-		return "", errors.New(ErrCreateSecret)
+		return nil, errors.New(ErrCreateSecret)
 	}
-	return newUser.Email, nil
+	return &newUser, nil
 }
 
 // Login - авторизация пользователя

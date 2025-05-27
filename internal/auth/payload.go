@@ -1,6 +1,8 @@
 package auth
 
 type LoginResponse struct {
+	UserId       uint   `json:"user_id"`
+	Email        string `json:"email"`
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
@@ -16,6 +18,8 @@ type RegisterRequest struct {
 }
 
 type RegisterResponse struct {
+	UserId       uint   `json:"user_id"`
+	Email        string `json:"email"`
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
