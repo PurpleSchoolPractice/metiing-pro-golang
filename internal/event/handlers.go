@@ -1,13 +1,17 @@
 package event
 
 import (
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/convert"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/jwt"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/middleware"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/request"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/res"
 	"github.com/go-chi/chi/v5"
-	"net/http"
-	"strconv"
+	"gorm.io/gorm"
 )
 
 type EventHandler struct {
@@ -21,7 +25,7 @@ type EventHandlerDeps struct {
 }
 
 func NewEventHandler(mux *chi.Mux, deps EventHandlerDeps) {
-	handler := EventHandler{
+	handler := &EventHandler{
 		EventRepository: deps.EventRepository,
 		JWTService:      deps.JWTService,
 	}
@@ -84,19 +88,40 @@ func (h *EventHandler) CreateEvent() http.HandlerFunc {
 // UpdateEvent Обновляет событие
 func (h *EventHandler) UpdateEvent() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, ok := r.Context().Value(middleware.ContextEmailKey).(string)
+		userId, ok := r.Context().Value(middleware.ContextUserIDKey).(uint)
 		if !ok {
-			http.Error(w, "Not possible to create new event", http.StatusInternalServerError)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		eventId, err := convert.ParseId(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		hasEventId, err := h.EventRepository.FindById(eventId)
+		if err != nil {
+			http.Error(w, "Event not found", http.StatusBadRequest)
+			return
 		}
 		body, err := request.HandelBody[EventRequest](w, r)
 		if err != nil {
 			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
 		}
-		newEvent := NewEvent(body.Title, body.Description, body.CreatorID, body.EventDate)
+
+		newEvent := &Event{
+			Model:       gorm.Model{ID: hasEventId.ID},
+			Title:       body.Title,
+			Description: body.Description,
+			EventDate:   time.Now(),
+			CreatorID:   userId,
+			OwnerID:     userId,
+		}
 
 		updatedEvent, err := h.EventRepository.Update(newEvent)
 		if err != nil {
-			http.Error(w, "Not possible to update new event", http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		res.JsonResponse(w, updatedEvent, http.StatusCreated)
@@ -121,15 +146,18 @@ func (h *EventHandler) DeleteEvent() http.HandlerFunc {
 
 		_, err = h.EventRepository.FindById(id)
 		if err != nil {
-			http.Error(w, "Not possible to delete event", http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		err = h.EventRepository.DeleteById(id)
 		if err != nil {
-			http.Error(w, "Not possible to delete event", http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		res.JsonResponse(w, true, http.StatusOK)
+		resDel := &DeleteResponse{
+			Delete: true,
+		}
+		res.JsonResponse(w, resDel, http.StatusOK)
 	}
 }
 
@@ -137,6 +165,9 @@ func (h *EventHandler) DeleteEvent() http.HandlerFunc {
 func (h *EventHandler) GetEventsWithCreators() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		eventsWithCreators, err := h.EventRepository.GetEventsWithCreators()
+		if eventsWithCreators == nil {
+			res.JsonResponse(w, "Not found events", http.StatusOK)
+		}
 		if err != nil {
 			http.Error(w, "Failed to fetch events with creators", http.StatusInternalServerError)
 			return

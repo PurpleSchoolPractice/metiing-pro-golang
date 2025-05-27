@@ -40,7 +40,7 @@ func (handler *AuthHandler) Register() http.HandlerFunc {
 		}
 		email, err := handler.AuthService.Register(body.Email, body.Password, body.Name)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		tokenPair, err := handler.AuthService.JWT.GenerateTokenPair(jwt.JWTData{Email: email})
@@ -52,7 +52,7 @@ func (handler *AuthHandler) Register() http.HandlerFunc {
 			AccessToken:  tokenPair.AccessToken,
 			RefreshToken: tokenPair.RefreshToken,
 		}
-		res.JsonResponse(w, data, http.StatusOK)
+		res.JsonResponse(w, data, http.StatusCreated)
 	}
 }
 

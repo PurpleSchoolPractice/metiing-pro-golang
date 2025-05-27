@@ -35,7 +35,7 @@ func (service *AuthService) Register(email, password, username string) (string, 
 		return "", errors.New(ErrUserExists)
 	}
 	if err := secret.ValidatePassword(password); err != nil {
-		return "", errors.New(ErrUserExists)
+		return "", errors.New(InvalidPassword)
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -61,12 +61,12 @@ func (service *AuthService) Register(email, password, username string) (string, 
 func (service *AuthService) Login(email, password string) (jwt.JWTData, error) {
 	user, err := service.UserRepository.FindByEmail(email)
 	if err != nil || user == nil {
-		return jwt.JWTData{}, errors.New(ErrWrongCredentials)
+		return jwt.JWTData{}, errors.New(InValidPasOrEmail)
 	}
 	if err := bcrypt.CompareHashAndPassword(
 		[]byte(user.Password), []byte(password),
 	); err != nil {
-		return jwt.JWTData{}, errors.New(ErrWrongCredentials)
+		return jwt.JWTData{}, errors.New(InValidPasOrEmail)
 	}
 
 	// Передаём и ID, и email
@@ -77,7 +77,7 @@ func (service *AuthService) Login(email, password string) (jwt.JWTData, error) {
 }
 
 // RefreshTokens - обновление токенов
-func (service *AuthService) RefreshTokens(accessToken, refreshToken string) (*jwt.TokenPair, error) {
+func (service *AuthService) RefreshTokens(refreshToken, accessToken string) (*jwt.TokenPair, error) {
 	accessTokenValid, _ := service.JWT.ParseToken(accessToken)
 	if accessTokenValid {
 		return nil, errors.New(ErrAccessToken)

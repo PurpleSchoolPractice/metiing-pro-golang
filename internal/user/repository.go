@@ -20,9 +20,7 @@ func NewUserRepository(dataBase *db.Db) *UserRepository {
 
 // Create создает новую запись в базе данных
 func (r *UserRepository) Create(u *User) (*User, error) {
-	if err := r.DataBase.
-		Session(&gorm.Session{NewDB: true}).
-		Create(u).Error; err != nil {
+	if err := r.DataBase.Create(u); err != nil {
 		return nil, err
 	}
 	return u, nil
@@ -37,7 +35,7 @@ func (r *UserRepository) FindByEmail(email string) (*User, error) {
 		First(&u).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
+		return nil, err
 	}
 	if err != nil {
 		return nil, err
@@ -58,7 +56,6 @@ func (repo *UserRepository) FindAllUsers() ([]User, error) {
 
 // Update обновляет информацию о пользователе в базе данных.
 func (repo *UserRepository) Update(user *User) (*User, error) {
-	repo.DataBase.DB = repo.DataBase.DB.Model(&User{})
 	result := repo.DataBase.DB.Model(&User{}).Where("id = ?", user.ID).Updates(map[string]interface{}{
 		"username": user.Username,
 		"password": user.Password,

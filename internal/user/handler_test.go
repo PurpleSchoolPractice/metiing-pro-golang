@@ -2,6 +2,7 @@ package user_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +14,7 @@ import (
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db/mock"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/jwt"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
@@ -35,7 +37,7 @@ func setupDBUsersHandler(t *testing.T) (*user.UserHandler, sqlmock.Sqlmock, func
 
 func TestGetAllUser(t *testing.T) {
 	handler, mockDB, clean := setupDBUsersHandler(t)
-	defer clean()
+	t.Cleanup(clean)
 	//Создаем данные для теста в моковой БД
 	rows := sqlmock.NewRows([]string{"id", "email", "password", "username"}).
 		AddRow(1, "test@test.ru", "TestTest1254!", "TestName").
@@ -51,7 +53,7 @@ func TestGetAllUser(t *testing.T) {
 }
 func TestUserByID(t *testing.T) {
 	handler, mockDB, clean := setupDBUsersHandler(t)
-	defer clean()
+	t.Cleanup(clean)
 	// Хэшируем пароль для имитации сохраненного пароля
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("Test1Test1!2021"), bcrypt.DefaultCost)
 	//Создаем данные для теста в моковой БД
@@ -61,7 +63,7 @@ func TestUserByID(t *testing.T) {
 	r := chi.NewRouter()
 	r.Get("/users/{id}", handler.GetUserByID())
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/users/1", nil)
+	req := httptest.NewRequest(http.MethodGet, "/user/1", nil)
 
 	r.ServeHTTP(w, req)
 	t.Logf("Response code: %d, body: %s", w.Code, w.Body.String())
@@ -71,13 +73,12 @@ func TestUserByID(t *testing.T) {
 }
 func TestUserUpdate(t *testing.T) {
 	handler, mockDB, clean := setupDBUsersHandler(t)
-	defer clean()
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("Test1Test1!2021"), bcrypt.DefaultCost)
-	require.NoError(t, err)
+	t.Cleanup(clean)
+
 	// Обновляем пользователя
 	mockDB.ExpectBegin()
-	mockDB.ExpectExec(`UPDATE "users" SET "email"=$1,"password"=$2,"username"=$3 WHERE "id" = $4`).
-		WithArgs("test2@test2.ru", string(hashedPassword), "Test", 1).
+	mockDB.ExpectExec(regexp.QuoteMeta(`UPDATE "users" SET "email"=$1,"password"=$2,"username"=$3,"updated_at"=$4 WHERE id = $5 AND "users"."deleted_at" IS NULL`)).
+		WithArgs("test2@test2.ru", sqlmock.AnyArg(), "Test", sqlmock.AnyArg(), 1).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mockDB.ExpectCommit()
 	data, err := json.Marshal(&user.UserUpdateRequest{
@@ -91,6 +92,8 @@ func TestUserUpdate(t *testing.T) {
 	reader := bytes.NewReader(data)
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPut, "/user/1", reader)
+	ctx := context.WithValue(req.Context(), middleware.ContextUserIDKey, uint(1))
+	req = req.WithContext(ctx)
 	r.ServeHTTP(w, req)
 	t.Logf("Response code: %d, body: %s", w.Code, w.Body.String())
 	require.Equal(t, w.Code, 200)

@@ -16,7 +16,7 @@ type Event struct {
 	OwnerID     uint      `json:"owner_id"`
 
 	// Связи
-	Creator user.User `gorm:"foreignKey:CreatorID"`
+	Creator *user.User `gorm:"foreignKey:CreatorID"`
 }
 
 // NewEvent создает новый объект события

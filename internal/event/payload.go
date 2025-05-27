@@ -18,3 +18,6 @@ type EventResponse struct {
 	EventDate   time.Time `json:"event_date"`
 	CreatorID   uint      `json:"creator_id"`
 }
+type DeleteResponse struct {
+	Delete bool `json:"delete"`
+}
