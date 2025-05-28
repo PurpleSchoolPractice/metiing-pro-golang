@@ -35,7 +35,7 @@ func setupDBUsersHandler(t *testing.T) (*user.UserHandler, sqlmock.Sqlmock, func
 
 func TestGetAllUser(t *testing.T) {
 	handler, mockDB, clean := setupDBUsersHandler(t)
-	defer clean()
+	t.Cleanup(clean)
 	//Создаем данные для теста в моковой БД
 	rows := sqlmock.NewRows([]string{"id", "email", "password", "username"}).
 		AddRow(1, "test@test.ru", "TestTest1254!", "TestName").
@@ -51,7 +51,7 @@ func TestGetAllUser(t *testing.T) {
 }
 func TestUserByID(t *testing.T) {
 	handler, mockDB, clean := setupDBUsersHandler(t)
-	defer clean()
+	t.Cleanup(clean)
 	// Хэшируем пароль для имитации сохраненного пароля
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("Test1Test1!2021"), bcrypt.DefaultCost)
 	//Создаем данные для теста в моковой БД
@@ -59,7 +59,7 @@ func TestUserByID(t *testing.T) {
 		AddRow(1, "test2@test2.ru", string(hashedPassword), "Test2")
 	mockDB.ExpectQuery("SELECT").WillReturnRows(rows)
 	r := chi.NewRouter()
-	r.Get("/users/{id}", handler.GetUserByID())
+	r.Get("/user/{id}", handler.GetUserByID())
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/users/1", nil)
 
@@ -71,7 +71,7 @@ func TestUserByID(t *testing.T) {
 }
 func TestUserUpdate(t *testing.T) {
 	handler, mockDB, clean := setupDBUsersHandler(t)
-	defer clean()
+	t.Cleanup(clean)
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("Test1Test1!2021"), bcrypt.DefaultCost)
 	require.NoError(t, err)
 	// Обновляем пользователя
@@ -99,7 +99,7 @@ func TestUserUpdate(t *testing.T) {
 
 func TestUserDelete(t *testing.T) {
 	handler, mock, clean := setupDBUsersHandler(t)
-	defer clean()
+	t.Cleanup(clean)
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("Test1Test1!2021"), bcrypt.DefaultCost)
 	require.NoError(t, err)
 

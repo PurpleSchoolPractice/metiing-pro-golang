@@ -27,7 +27,7 @@ func NewUserHandler(mux *chi.Mux, deps UserHandlerDeps) {
 		JWTService:     deps.JWTService,
 	}
 	mux.Handle("GET /users", handler.GetAllUsers())
-	mux.Handle("GET /users/{id}", middleware.IsAuthed(handler.GetUserByID(), handler.JWTService))
+	mux.Handle("GET /user/{id}", middleware.IsAuthed(handler.GetUserByID(), handler.JWTService))
 	mux.Handle("PUT /user/{id}", middleware.IsAuthed(handler.UpdateDataUser(), handler.JWTService))
 	mux.Handle("DELETE /user/{id}", middleware.IsAuthed(handler.DeleteUser(), handler.JWTService))
 }
