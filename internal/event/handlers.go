@@ -109,7 +109,7 @@ func (h *EventHandler) UpdateEvent() http.HandlerFunc {
 			http.Error(w, "Bad request", http.StatusBadRequest)
 			return
 		}
-
+		//Заполняем событие новыми данными
 		newEvent := &Event{
 			Model:       gorm.Model{ID: hasEventId.ID},
 			Title:       body.Title,

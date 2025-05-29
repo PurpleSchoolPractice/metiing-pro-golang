@@ -51,6 +51,7 @@ func (handler *UserHandler) GetAllUsers() http.HandlerFunc {
 // Получение пользователя по id
 func (handler *UserHandler) GetUserByID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		//Парсим ID из строки
 		id, err := convert.ParseId(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -82,6 +83,7 @@ func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 			http.Error(w, "Неверный запрос", http.StatusBadRequest)
 			return
 		}
+		//Парсим ID из строки
 		userId, err := convert.ParseId(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -93,6 +95,7 @@ func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 			return
 
 		}
+		//Заполняем данные юзера для обновления
 		user := &User{
 			Model: gorm.Model{
 				ID: userId,
@@ -102,6 +105,7 @@ func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 			Email:    body.Email,
 		}
 		var updatedUser *User
+		//Проверяем что обновляем именно авторизованного юзера, а не кого другого
 		if userIdContext == userId {
 			updatedUser, err = handler.UserRepository.Update(user)
 			if err != nil {
