@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
 	"gorm.io/gorm"
 )
@@ -36,7 +37,7 @@ func (r *UserRepository) FindByEmail(email string) (*User, error) {
 		First(&u).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
+		return nil, err
 	}
 	if err != nil {
 		return nil, err
@@ -77,4 +78,19 @@ func (repo *UserRepository) Delete(user *User) error {
 		return result.Error
 	}
 	return nil
+}
+func (r *UserRepository) FindByid(id uint) (*User, error) {
+	var u User
+	err := r.DataBase.
+		Session(&gorm.Session{NewDB: true}).
+		Where("id = ?", id).
+		First(&u).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
 }

@@ -59,6 +59,10 @@ func setupApplication() *AppComponents {
 		Config:      cfg,
 		AuthService: authService,
 	})
+	user.NewUserHandler(router, user.UserHandlerDeps{
+		UserRepository: userRepo,
+		JWTService:     jwtService,
+	})
 
 	// Инициализация репозитория событий
 	eventRepo := event.NewEventRepository(database)
