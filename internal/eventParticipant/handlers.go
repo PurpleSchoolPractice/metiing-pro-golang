@@ -2,7 +2,6 @@ package eventParticipant
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -51,9 +50,7 @@ func (h *EventParticipantHandler) AddEventParticipant() http.HandlerFunc {
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
-
 		userID := event.GetUserIDFromContext(r.Context())
-		fmt.Println(userID)
 		log.Printf(
 			"AddEvent: ctxUserID=%d, req.EventID=%d, req.UserID=%d",
 			userID, req.EventID, req.UserID,

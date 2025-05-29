@@ -167,6 +167,7 @@ func (h *EventHandler) GetEventsWithCreators() http.HandlerFunc {
 		eventsWithCreators, err := h.EventRepository.GetEventsWithCreators()
 		if eventsWithCreators == nil {
 			res.JsonResponse(w, "Not found events", http.StatusOK)
+			return
 		}
 		if err != nil {
 			http.Error(w, "Failed to fetch events with creators", http.StatusInternalServerError)
