@@ -1,8 +1,8 @@
 package eventParticipant
 
 import (
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/event"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
 	"gorm.io/gorm"
 )
 

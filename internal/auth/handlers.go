@@ -38,21 +38,22 @@ func (handler *AuthHandler) Register() http.HandlerFunc {
 		if err != nil {
 			return
 		}
-		email, err := handler.AuthService.Register(body.Email, body.Password, body.Name)
+		user, err := handler.AuthService.Register(body.Email, body.Password, body.Name)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		tokenPair, err := handler.AuthService.JWT.GenerateTokenPair(jwt.JWTData{Email: email})
+		tokenPair, err := handler.AuthService.JWT.GenerateTokenPair(jwt.JWTData{Email: user.Email})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		data := RegisterResponse{
 			AccessToken:  tokenPair.AccessToken,
 			RefreshToken: tokenPair.RefreshToken,
 		}
-		res.JsonResponse(w, data, http.StatusOK)
+		res.JsonResponse(w, data, http.StatusCreated)
 	}
 }
 
@@ -78,6 +79,8 @@ func (handler *AuthHandler) Login() http.HandlerFunc {
 		}
 
 		res.JsonResponse(w, LoginResponse{
+			UserId:       jwtData.UserID,
+			Email:        jwtData.Email,
 			AccessToken:  tokenPair.AccessToken,
 			RefreshToken: tokenPair.RefreshToken,
 		}, http.StatusOK)

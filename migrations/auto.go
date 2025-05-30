@@ -24,7 +24,8 @@ func main() {
 	if err != nil {
 		logging.Info(err.Error())
 	}
-
+	//удаляет все записи с БД
+	//database.Migrator().DropTable(&user.User{}, &secret.Secret{}, &event.Event{}, &eventParticipant.EventParticipant{})
 	err = database.AutoMigrate(
 		&user.User{},
 		&secret.Secret{},

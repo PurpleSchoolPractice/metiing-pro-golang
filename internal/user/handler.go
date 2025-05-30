@@ -9,6 +9,7 @@ import (
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/request"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/res"
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -50,7 +51,8 @@ func (handler *UserHandler) GetAllUsers() http.HandlerFunc {
 // Получение пользователя по id
 func (handler *UserHandler) GetUserByID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := convert.ConvertID(r)
+		//Парсим ID из строки
+		id, err := convert.ParseId(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -71,29 +73,50 @@ func (handler *UserHandler) GetUserByID() http.HandlerFunc {
 // Обновление пользователя
 func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		userIdContext, ok := r.Context().Value(middleware.ContextUserIDKey).(uint)
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
 		body, err := request.HandelBody[UserUpdateRequest](w, r)
 		if err != nil {
 			http.Error(w, "Неверный запрос", http.StatusBadRequest)
 			return
 		}
-		userId, err := convert.ConvertID(r)
+		//Парсим ID из строки
+		userId, err := convert.ParseId(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+
+		}
+		//Заполняем данные юзера для обновления
 		user := &User{
 			Model: gorm.Model{
 				ID: userId,
 			},
 			Username: body.Username,
-			Password: body.Password,
+			Password: string(hashedPassword),
 			Email:    body.Email,
 		}
-		updatedUser, err := handler.UserRepository.Update(user)
-		if err != nil {
-			http.Error(w, err.Error(), 200)
+		var updatedUser *User
+		//Проверяем что обновляем именно авторизованного юзера, а не кого другого
+		if userIdContext == userId {
+			updatedUser, err = handler.UserRepository.Update(user)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+		} else {
+			http.Error(w, "Can not Update. Different user", http.StatusBadRequest)
 			return
 		}
+
 		res.JsonResponse(w, updatedUser, 200)
 	}
 }
@@ -101,7 +124,7 @@ func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 // Удаление пользователя
 func (handler *UserHandler) DeleteUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := convert.ConvertID(r)
+		id, err := convert.ParseId(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}

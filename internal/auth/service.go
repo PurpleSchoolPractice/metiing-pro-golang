@@ -29,17 +29,17 @@ func NewAuthService(
 }
 
 // Register - регистрация пользователя
-func (service *AuthService) Register(email, password, username string) (string, error) {
+func (service *AuthService) Register(email, password, username string) (*user.User, error) {
 	existUser, _ := service.UserRepository.FindByEmail(email)
 	if existUser != nil {
-		return "", errors.New(ErrUserExists)
+		return nil, errors.New(ErrUserExists)
 	}
 	if err := secret.ValidatePassword(password); err != nil {
-		return "", errors.New(ErrUserExists)
+		return nil, errors.New(InvalidPassword)
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	newUser := user.User{
 		Email:    email,
@@ -48,25 +48,25 @@ func (service *AuthService) Register(email, password, username string) (string, 
 	}
 	createdUser, err := service.UserRepository.Create(&newUser)
 	if err != nil {
-		return "", errors.New(ErrUserExists)
+		return nil, errors.New(ErrUserExists)
 	}
 	_, err = service.SecretRepository.Create(string(hashedPassword), createdUser.ID)
 	if err != nil {
-		return "", errors.New(ErrCreateSecret)
+		return nil, errors.New(ErrCreateSecret)
 	}
-	return newUser.Email, nil
+	return &newUser, nil
 }
 
 // Login - авторизация пользователя
 func (service *AuthService) Login(email, password string) (jwt.JWTData, error) {
 	user, err := service.UserRepository.FindByEmail(email)
 	if err != nil || user == nil {
-		return jwt.JWTData{}, errors.New(ErrWrongCredentials)
+		return jwt.JWTData{}, errors.New(InValidPasOrEmail)
 	}
 	if err := bcrypt.CompareHashAndPassword(
 		[]byte(user.Password), []byte(password),
 	); err != nil {
-		return jwt.JWTData{}, errors.New(ErrWrongCredentials)
+		return jwt.JWTData{}, errors.New(InValidPasOrEmail)
 	}
 
 	// Передаём и ID, и email
@@ -77,7 +77,7 @@ func (service *AuthService) Login(email, password string) (jwt.JWTData, error) {
 }
 
 // RefreshTokens - обновление токенов
-func (service *AuthService) RefreshTokens(accessToken, refreshToken string) (*jwt.TokenPair, error) {
+func (service *AuthService) RefreshTokens(refreshToken, accessToken string) (*jwt.TokenPair, error) {
 	accessTokenValid, _ := service.JWT.ParseToken(accessToken)
 	if accessTokenValid {
 		return nil, errors.New(ErrAccessToken)

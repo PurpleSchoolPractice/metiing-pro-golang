@@ -2,13 +2,14 @@ package eventParticipant
 
 import (
 	"encoding/json"
+	"log"
+	"net/http"
+	"strconv"
+
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/event"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/jwt"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/middleware"
 	"github.com/go-chi/chi/v5"
-	"log"
-	"net/http"
-	"strconv"
 )
 
 type EventParticipantHandler struct {
@@ -49,7 +50,6 @@ func (h *EventParticipantHandler) AddEventParticipant() http.HandlerFunc {
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
-
 		userID := event.GetUserIDFromContext(r.Context())
 		log.Printf(
 			"AddEvent: ctxUserID=%d, req.EventID=%d, req.UserID=%d",

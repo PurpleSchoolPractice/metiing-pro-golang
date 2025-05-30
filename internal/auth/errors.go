@@ -8,4 +8,6 @@ const (
 	ErrAccessToken         = "Access token is valid"
 	ErrUserNotFound        = "User not found"
 	ErrGenerateToken       = "Failed to generate token"
+	InvalidPassword        = "The password must contain 12 characters including numbers and special characters."
+	InValidPasOrEmail      = "Invalid passwod or email"
 )
