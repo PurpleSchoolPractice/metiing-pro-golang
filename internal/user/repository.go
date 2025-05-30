@@ -84,7 +84,11 @@ func (r *UserRepository) FindByid(id uint) (*User, error) {
 		First(&u).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
+<<<<<<< HEAD
 		return nil, nil
+=======
+		return nil, err
+>>>>>>> master
 	}
 	if err != nil {
 		return nil, err

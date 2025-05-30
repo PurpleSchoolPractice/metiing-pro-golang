@@ -9,7 +9,10 @@ import (
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/request"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/res"
 	"github.com/go-chi/chi/v5"
+<<<<<<< HEAD
 	"golang.org/x/crypto/bcrypt"
+=======
+>>>>>>> master
 	"gorm.io/gorm"
 )
 
@@ -51,8 +54,12 @@ func (handler *UserHandler) GetAllUsers() http.HandlerFunc {
 // Получение пользователя по id
 func (handler *UserHandler) GetUserByID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+<<<<<<< HEAD
 		//Парсим ID из строки
 		id, err := convert.ParseId(r)
+=======
+		id, err := convert.ConvertID(r)
+>>>>>>> master
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -73,16 +80,21 @@ func (handler *UserHandler) GetUserByID() http.HandlerFunc {
 // Обновление пользователя
 func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+<<<<<<< HEAD
 		userIdContext, ok := r.Context().Value(middleware.ContextUserIDKey).(uint)
 		if !ok {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
+=======
+
+>>>>>>> master
 		body, err := request.HandelBody[UserUpdateRequest](w, r)
 		if err != nil {
 			http.Error(w, "Неверный запрос", http.StatusBadRequest)
 			return
 		}
+<<<<<<< HEAD
 		//Парсим ID из строки
 		userId, err := convert.ParseId(r)
 		if err != nil {
@@ -96,11 +108,18 @@ func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 
 		}
 		//Заполняем данные юзера для обновления
+=======
+		userId, err := convert.ConvertID(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+>>>>>>> master
 		user := &User{
 			Model: gorm.Model{
 				ID: userId,
 			},
 			Username: body.Username,
+<<<<<<< HEAD
 			Password: string(hashedPassword),
 			Email:    body.Email,
 		}
@@ -117,6 +136,16 @@ func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 			return
 		}
 
+=======
+			Password: body.Password,
+			Email:    body.Email,
+		}
+		updatedUser, err := handler.UserRepository.Update(user)
+		if err != nil {
+			http.Error(w, err.Error(), 200)
+			return
+		}
+>>>>>>> master
 		res.JsonResponse(w, updatedUser, 200)
 	}
 }
@@ -124,7 +153,11 @@ func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 // Удаление пользователя
 func (handler *UserHandler) DeleteUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+<<<<<<< HEAD
 		id, err := convert.ParseId(r)
+=======
+		id, err := convert.ConvertID(r)
+>>>>>>> master
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
