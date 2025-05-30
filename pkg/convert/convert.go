@@ -9,11 +9,7 @@ import (
 )
 
 // преобразуем ID в UINT
-<<<<<<< HEAD
 func ParseId(r *http.Request) (uint, error) {
-=======
-func ConvertID(r *http.Request) (uint, error) {
->>>>>>> master
 	strUserID := chi.URLParam(r, "id")
 
 	idUint, err := strconv.ParseUint(strUserID, 10, 64)
