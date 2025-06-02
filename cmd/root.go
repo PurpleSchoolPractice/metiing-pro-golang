@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/migrations"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -26,6 +27,15 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Загружаем конфигурацию с Viper
 		initConfig()
+	},
+}
+var downgrade = &cobra.Command{
+	Use:   "deldefrec",
+	Short: "Delete default records from the database",
+	Long:  `This command deletes default records from users, secrets, events, and event_participants tables.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("Running...")
+		migrations.Migrate()
 	},
 }
 
@@ -53,7 +63,6 @@ func init() {
 	rootCmd.PersistentFlags().String("log-level", "info", "уровень логирования (debug, info, warn, error)")
 
 	viper.AutomaticEnv()
-
 }
 
 func initConfig() {
