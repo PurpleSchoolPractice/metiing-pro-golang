@@ -51,6 +51,7 @@ func InitModelMigration() {
 	if err != nil {
 		logging.Error(err.Error())
 	}
+	//database.Migrator().DropTable(&user.User{}, &secret.Secret{}, &event.Event{}, &eventParticipant.EventParticipant{})
 	//Автомиграция таблиц
 	//err = database.AutoMigrate(
 	//	&user.User{},
