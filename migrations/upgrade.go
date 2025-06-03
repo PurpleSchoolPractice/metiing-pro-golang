@@ -39,11 +39,13 @@ func UserModelInit(db *gorm.DB, logger *logger.Logger) (string, string, error) {
 	if count == 0 {
 		users := []*user.User{
 			{
+
 				Username: "Test1",
 				Password: string(hashedPassword1),
 				Email:    "test1@test1.ru",
 			},
 			{
+
 				Username: "Test2",
 				Password: string(hashedPassword2),
 				Email:    "test2@test2.ru",

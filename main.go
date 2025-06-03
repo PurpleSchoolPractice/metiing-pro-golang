@@ -17,7 +17,7 @@ import (
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/secret"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/server"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
-	migration "github.com/PurpleSchoolPractice/metiing-pro-golang/migrations"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/migrations"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/jwt"
 	"github.com/go-chi/chi/v5"
@@ -57,7 +57,7 @@ func setupApplication() *AppComponents {
 	authService := auth.NewAuthService(userRepo, secretRepo, jwtService)
 
 	//Инициализация миграций
-	migration.InitModelMigration()
+	migrations.InitModelMigration()
 
 	// Регистрация обработчиков
 	auth.NewAuthHandler(router, auth.AuthHandlerDeps{
