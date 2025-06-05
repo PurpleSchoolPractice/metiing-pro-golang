@@ -1,0 +1,145 @@
+// migrations_integration_test.go
+package migrations_test
+
+import (
+	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/migrations"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db/mock"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/bcrypt"
+)
+
+type MockLogger struct{}
+
+func (l *MockLogger) Info(msg string, args ...any)  {}
+func (l *MockLogger) Error(msg string, args ...any) {}
+func TestUserModelInit(t *testing.T) {
+	db, mock, cleanup := mock.SetupMockDB(t)
+	defer cleanup()
+
+	mockLog := &MockLogger{}
+	//Проверяем созданы ли таблицы
+	mock.ExpectQuery(`SELECT count\(\*\) FROM information_schema.tables WHERE table_schema = CURRENT_SCHEMA\(\) AND table_name = \$1 AND table_type = \$2`).
+		WithArgs("users", "BASE TABLE").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+		//создаем таблицы
+	mock.ExpectExec(`CREATE TABLE "users"`).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+		//создаем индекс
+	mock.ExpectExec(`CREATE INDEX IF NOT EXISTS "idx_users_deleted_at"`).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+		//проверяем таблицу
+	mock.ExpectQuery(`SELECT count\(\*\) FROM "users" WHERE "users"\."deleted_at" IS NULL`).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+		//ожидаем
+	mock.ExpectBegin()
+	//создаем дефолтных
+	mock.ExpectQuery(`INSERT INTO "users" .* RETURNING "id"`).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1).AddRow(2))
+
+	mock.ExpectCommit()
+
+	hash1, hash2, err := migrations.UserModelInit(db, mockLog)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, hash1)
+	require.NotEmpty(t, hash2)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+func TestSecretInit(t *testing.T) {
+	db, mock, cleanup := mock.SetupMockDB(t)
+	defer cleanup()
+
+	mockLog := &MockLogger{}
+	mock.ExpectQuery(`SELECT count\(\*\) FROM information_schema.tables WHERE table_schema = CURRENT_SCHEMA\(\) AND table_name = \$1 AND table_type = \$2`).
+		WithArgs("secrets", "BASE TABLE").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	mock.ExpectExec(`CREATE TABLE "secrets"`).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+
+	mock.ExpectExec(`CREATE INDEX IF NOT EXISTS "idx_secrets_deleted_at"`).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(`CREATE INDEX IF NOT EXISTS "idx_secrets_user_id"`).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectQuery(`SELECT count\(\*\) FROM "secrets" WHERE "secrets"\."deleted_at" IS NULL`).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	mock.ExpectBegin()
+
+	mock.ExpectQuery(`INSERT INTO "secrets" .* RETURNING "id"`).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1).AddRow(2))
+
+	mock.ExpectCommit()
+
+	hash1, _ := bcrypt.GenerateFromPassword([]byte("Test1Test1!2021"), bcrypt.DefaultCost) //user Test1
+	hash2, _ := bcrypt.GenerateFromPassword([]byte("Test2Test2!2022"), bcrypt.DefaultCost) //user Test2
+
+	err := migrations.SecretModelInit(db, mockLog, string(hash1), string(hash2))
+
+	require.NoError(t, err)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+func TestEventInit(t *testing.T) {
+	db, mock, cleanup := mock.SetupMockDB(t)
+	defer cleanup()
+	mockLog := &MockLogger{}
+	// Проверка существования таблицы
+	mock.ExpectQuery(`SELECT count\(\*\) FROM information_schema.tables WHERE table_schema = CURRENT_SCHEMA\(\) AND table_name = \$1 AND table_type = \$2`).
+		WithArgs("events", "BASE TABLE").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	// Создание таблицы
+	mock.ExpectExec(`CREATE TABLE "events"`).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+		// Создание индекса
+	mock.ExpectExec(`CREATE INDEX IF NOT EXISTS "idx_events_deleted_at"`).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+	// проверяем количества записей
+	mock.ExpectQuery(`SELECT count\(\*\) FROM "events" WHERE "events"\."deleted_at" IS NULL`).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	mock.ExpectBegin()
+
+	// Вставка новых событий
+	mock.ExpectQuery(`INSERT INTO "events" .* RETURNING "id"`).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1).AddRow(2))
+
+	mock.ExpectCommit()
+
+	err := migrations.EventModelInit(db, mockLog)
+
+	require.NoError(t, err)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+func TestEventParticipantInit(t *testing.T) {
+	db, mock, cleanup := mock.SetupMockDB(t)
+	defer cleanup()
+	mockLog := &MockLogger{}
+
+	mock.ExpectQuery(`SELECT count\(\*\) FROM information_schema.tables WHERE table_schema = CURRENT_SCHEMA\(\) AND table_name = \$1 AND table_type = \$2`).
+		WithArgs("event_participants", "BASE TABLE").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	mock.ExpectExec(`CREATE TABLE "event_participants"`).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+
+	mock.ExpectExec(`CREATE INDEX IF NOT EXISTS "idx_event_participants_deleted_at"`).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+
+	mock.ExpectQuery(`SELECT count\(\*\) FROM "event_participants" WHERE "event_participants"\."deleted_at" IS NULL`).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	mock.ExpectBegin()
+	mock.ExpectQuery(`INSERT INTO "event_participants" .* RETURNING "id"`).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1).AddRow(2))
+
+	mock.ExpectCommit()
+
+	err := migrations.EventParticipantModelInit(db, mockLog)
+
+	require.NoError(t, err)
+	require.NoError(t, mock.ExpectationsWereMet())
+}

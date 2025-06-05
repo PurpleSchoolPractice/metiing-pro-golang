@@ -43,16 +43,18 @@ CREATE DATABASE ваша название Базы данных(postgres);
 ```go
 DATABASE_DSN="host=localhost user=ваши данные password=ваши данные dbname=postgres port=5432 sslmode=disable"
 ```
-6. Выполните миграции:
+6. Установите приложение
 ```go
-go run migrations/auto.go
+go install
 ```
 Использование
 ---------------
 1. Запустите приложение:
 ##
 ```go
-go run cmd/main.go
+meeting 
+    или
+go run main.go
 ```
 2. API доступно по ссылке <http://localhost:8080>
 

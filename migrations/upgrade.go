@@ -26,7 +26,7 @@ func checkTable[T any](db *gorm.DB) (int64, error) {
 }
 
 // проверка и заполнение тестовыми данными таблицы User
-func UserModelInit(db *gorm.DB, logger *logger.Logger) (string, string, error) {
+func UserModelInit(db *gorm.DB, logger logger.LoggerInterface) (string, string, error) {
 	//проверка существования таблицы, если нет то создаем
 	count, err := checkTable[user.User](db)
 	if err != nil {
@@ -62,7 +62,7 @@ func UserModelInit(db *gorm.DB, logger *logger.Logger) (string, string, error) {
 }
 
 // проверка и заполнение тестовыми данными таблицы Secret
-func SecretModelInit(db *gorm.DB, logger *logger.Logger, userSecret1, userSecret2 string) error {
+func SecretModelInit(db *gorm.DB, logger logger.LoggerInterface, userSecret1, userSecret2 string) error {
 	//проверка существования таблицы, если нет то создаем
 	count, err := checkTable[secret.Secret](db)
 	if err != nil {
@@ -92,7 +92,7 @@ func SecretModelInit(db *gorm.DB, logger *logger.Logger, userSecret1, userSecret
 }
 
 // проверка и заполнение тестовыми данными таблицы Event
-func EventModelInit(db *gorm.DB, logger *logger.Logger) error {
+func EventModelInit(db *gorm.DB, logger logger.LoggerInterface) error {
 	//проверка существования таблицы, если нет то создаем
 	count, err := checkTable[event.Event](db)
 	if err != nil {
@@ -127,7 +127,7 @@ func EventModelInit(db *gorm.DB, logger *logger.Logger) error {
 }
 
 // проверка и заполнение тестовыми данными таблицы  EventParticipant
-func EventParticipantModelInit(db *gorm.DB, logger *logger.Logger) error {
+func EventParticipantModelInit(db *gorm.DB, logger logger.LoggerInterface) error {
 	//проверка существования таблицы, если нет то создаем
 	count, err := checkTable[eventParticipant.EventParticipant](db)
 	if err != nil {
