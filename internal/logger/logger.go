@@ -24,6 +24,10 @@ type PrettyHandler struct {
 	slog.Handler
 	l *log.Logger
 }
+type LoggerInterface interface {
+	Info(msg string, args ...any)
+	Error(msg string, args ...any)
+}
 
 // Handle writes the record to the standard logger.
 func (h *PrettyHandler) Handle(ctx context.Context, r slog.Record) error {

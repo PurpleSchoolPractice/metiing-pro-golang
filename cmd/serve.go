@@ -1,12 +1,13 @@
-package main
+package cmd
 
 import (
 	"context"
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
-	"github.com/go-chi/chi/v5"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
+	"github.com/go-chi/chi/v5"
 
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/app"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/logger"
