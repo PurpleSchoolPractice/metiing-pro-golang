@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/event"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/jwt"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/middleware"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/res"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -111,7 +113,7 @@ func (h *EventParticipantHandler) DeleteEventParticipant() http.HandlerFunc {
 	}
 }
 
-// GetEventParticipantById Возвращает список участников события
+// GetEventParticipantById Возвращает список участников события с приглашениями
 func (h *EventParticipantHandler) GetEventParticipantById() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idParam := chi.URLParam(r, "id")
@@ -121,16 +123,18 @@ func (h *EventParticipantHandler) GetEventParticipantById() http.HandlerFunc {
 			return
 		}
 
-		participants, err := h.EventParticipantRepository.GetEventParticipants(uint(id))
+		participants, err := h.EventParticipantRepository.GetUsersWithInvites(uint(id))
 		if err != nil {
 			http.Error(w, "Failed to get participants", http.StatusInternalServerError)
 			return
 		}
-
-		if err := json.NewEncoder(w).Encode(participants); err != nil {
-			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-			return
+		//Собираем ответ
+		usersInvite := models.UserStatus{
+			UserId: participants.UserID,
+			Status: participants.Status,
 		}
+		res.JsonResponse(w, usersInvite, http.StatusOK)
+
 	}
 }
 

@@ -8,9 +8,9 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// преобразуем ID в UINT
-func ParseId(r *http.Request) (uint, error) {
-	strUserID := chi.URLParam(r, "id")
+// парсим ID в строке
+func ParseId(r *http.Request, parsIs string) (uint, error) {
+	strUserID := chi.URLParam(r, parsIs)
 
 	idUint, err := strconv.ParseUint(strUserID, 10, 64)
 	if err != nil {

@@ -51,7 +51,7 @@ func TestGetAllUser(t *testing.T) {
 	require.Equal(t, w.Code, 200)
 	require.NoError(t, mockDB.ExpectationsWereMet())
 }
-func TestUserByID(t *testing.T) {
+func TestGetUserByID(t *testing.T) {
 	handler, mockDB, clean := setupDBUsersHandler(t)
 	t.Cleanup(clean)
 	// Хэшируем пароль для имитации сохраненного пароля
@@ -61,7 +61,7 @@ func TestUserByID(t *testing.T) {
 		AddRow(1, "test2@test2.ru", string(hashedPassword), "Test2")
 	mockDB.ExpectQuery("SELECT").WillReturnRows(rows)
 	r := chi.NewRouter()
-	r.Get("/users/{id}", handler.GetUserByID())
+	r.Get("/user/{id}", handler.GetUserByID())
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/user/1", nil)
 

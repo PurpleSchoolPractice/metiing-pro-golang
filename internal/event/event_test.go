@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db/mock"
 	"github.com/stretchr/testify/require"
@@ -17,17 +18,18 @@ func TestCreateEvent(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO "events"`).
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
-			"testevent", "description", "2025-05-09", 1).
+			"testevent", "description", "2025-05-09 11:02", 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectCommit()
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventRepository(dbWrapper)
-	repo.DataBase.DB = repo.DataBase.DB.Model(&Event{}) // Установка модели таблицы
-	date, err := time.Parse("2006-01-02", "2025-05-09")
+	repo.DataBase.DB = repo.DataBase.DB.Model(&models.Event{}) // Установка модели таблицы
+	date, err := time.Parse("2006-01-02 15:04", "2025-05-09 11:02")
 	if err != nil {
 		t.Fatalf("Not possible to parse date: %v", err)
 	}
-	newEvent := NewEvent("testevent", "description", 1, date)
+
+	newEvent := models.NewEvent("testevent", "description", 30, 1, date)
 	createdEvent, err := repo.Create(newEvent)
 	require.NoError(t, err, "Create event failed")
 	require.NotEmpty(t, createdEvent, "Create event should not be empty")
@@ -58,14 +60,14 @@ func TestFindEventByID(t *testing.T) {
 
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventRepository(dbWrapper)
-	repo.DataBase.DB = repo.DataBase.DB.Model(&Event{}) // Установка модели таблицы
+	repo.DataBase.DB = repo.DataBase.DB.Model(&models.Event{}) // Установка модели таблицы
 	foundEvent, err := repo.FindById(uint(1))
 	require.NoError(t, err, "Error finding event")
 	require.NotNil(t, foundEvent, "Expected to find event")
 	require.Equal(t, uint(1), foundEvent.ID)
 	require.Equal(t, "testevent", foundEvent.Title)
 	require.Equal(t, "description", foundEvent.Description)
-	require.Equal(t, date, foundEvent.EventDate)
+	require.Equal(t, date, foundEvent.StartDate)
 	require.Equal(t, uint(1), foundEvent.CreatorID)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -93,14 +95,14 @@ func TestFindByCreatorID(t *testing.T) {
 		WithArgs(uint(1)).WillReturnRows(rows)
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventRepository(dbWrapper)
-	repo.DataBase.DB = repo.DataBase.DB.Model(&Event{}) // Установка модели таблицы
+	repo.DataBase.DB = repo.DataBase.DB.Model(&models.Event{}) // Установка модели таблицы
 	findedEvents, err := repo.FindAllByCreatorId(uint(1))
 	require.NoError(t, err, "Error finding events")
 	require.Len(t, findedEvents, 1)
 	require.Equal(t, uint(1), findedEvents[0].ID)
 	require.Equal(t, "testevent", findedEvents[0].Title)
 	require.Equal(t, "description", findedEvents[0].Description)
-	require.Equal(t, date, findedEvents[0].EventDate)
+	require.Equal(t, date, findedEvents[0].StartDate)
 	require.Equal(t, uint(1), findedEvents[0].CreatorID)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -111,21 +113,22 @@ func TestUpdateEvent(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec(`UPDATE "events" SET`).
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
-			"newtestevent", "newdescription", "2025-05-10", 1).
+			"newtestevent", "newdescription", "2025-05-10 11:02", 1).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
-	date, err := time.Parse("2006-01-02", "2025-05-09")
+	date, err := time.Parse("2006-01-02 15:01", "2025-05-10 11:02")
 	if err != nil {
 		t.Fatalf("Not possible to parse date: %v", err)
 	}
+
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventRepository(dbWrapper)
-	repo.DataBase.DB = repo.DataBase.DB.Model(&Event{}) // Установка модели таблицы
-	eventUpdate := &Event{
+	repo.DataBase.DB = repo.DataBase.DB.Model(&models.Event{}) // Установка модели таблицы
+	eventUpdate := &models.Event{
 		Title:       "newtestevent",
 		Description: "newdescription",
 		CreatorID:   1,
-		EventDate:   date,
+		StartDate:   date,
 	}
 	updatedEvent, err := repo.Update(eventUpdate)
 	require.NoError(t, err, "Error updating event")
@@ -144,7 +147,7 @@ func TestDeleteEventByID(t *testing.T) {
 	mock.ExpectCommit()
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventRepository(dbWrapper)
-	repo.DataBase.DB = repo.DataBase.DB.Model(&Event{}) // Установка модели таблицы
+	repo.DataBase.DB = repo.DataBase.DB.Model(&models.Event{}) // Установка модели таблицы
 	err := repo.DeleteById(uint(1))
 	require.NoError(t, err, "Error deleting event")
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -175,7 +178,7 @@ func TestGetEventWithCreator(t *testing.T) {
 
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventRepository(dbWrapper)
-	repo.DataBase.DB = repo.DataBase.DB.Model(&Event{}) // Установка модели таблицы
+	repo.DataBase.DB = repo.DataBase.DB.Model(&models.Event{}) // Установка модели таблицы
 	event, err := repo.GetEventWithCreator(uint(1))
 	require.NoError(t, err, "Error getting event with creator")
 	require.NotNil(t, event, "Event should not be nil")

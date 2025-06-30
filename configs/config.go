@@ -1,16 +1,18 @@
 package configs
 
 import (
-	"github.com/joho/godotenv"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	Logging  LoggingConfig
-	Auth     AuthConfig
+	Server      ServerConfig
+	Database    DatabaseConfig
+	Logging     LoggingConfig
+	Auth        AuthConfig
+	EmailSender EmailSender
 }
 
 type ServerConfig struct {
@@ -31,6 +33,12 @@ type LoggingConfig struct {
 
 type AuthConfig struct {
 	Secret string
+}
+type EmailSender struct {
+	Email        string
+	Password     string
+	SmtpWithPort string
+	Smtp         string
 }
 
 func LoadConfig() *Config {
@@ -56,6 +64,11 @@ func LoadConfig() *Config {
 		},
 		Auth: AuthConfig{
 			Secret: os.Getenv("KEY"),
+		}, EmailSender: EmailSender{
+			Email:        os.Getenv("EMAIL"),
+			Password:     os.Getenv("PASSWORD"),
+			SmtpWithPort: os.Getenv("SMTPWITHPORT"),
+			Smtp:         os.Getenv("SMTP"),
 		},
 	}
 }

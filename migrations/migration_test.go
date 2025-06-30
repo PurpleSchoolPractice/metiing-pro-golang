@@ -3,8 +3,10 @@ package migrations_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/migrations"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db/mock"
 	"github.com/stretchr/testify/require"
@@ -41,11 +43,10 @@ func TestUserModelInit(t *testing.T) {
 
 	mock.ExpectCommit()
 
-	hash1, hash2, err := migrations.UserModelInit(db, mockLog)
+	users, err := migrations.UserModelInit(db, mockLog)
 
 	require.NoError(t, err)
-	require.NotEmpty(t, hash1)
-	require.NotEmpty(t, hash2)
+	require.NotEmpty(t, users)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 func TestSecretInit(t *testing.T) {
@@ -59,10 +60,9 @@ func TestSecretInit(t *testing.T) {
 
 	mock.ExpectExec(`CREATE TABLE "secrets"`).
 		WillReturnResult(sqlmock.NewResult(0, 0))
-
-	mock.ExpectExec(`CREATE INDEX IF NOT EXISTS "idx_secrets_deleted_at"`).
-		WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectExec(`CREATE INDEX IF NOT EXISTS "idx_secrets_user_id"`).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(`CREATE INDEX IF NOT EXISTS "idx_secrets_deleted_at"`).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectQuery(`SELECT count\(\*\) FROM "secrets" WHERE "secrets"\."deleted_at" IS NULL`).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
@@ -76,8 +76,21 @@ func TestSecretInit(t *testing.T) {
 
 	hash1, _ := bcrypt.GenerateFromPassword([]byte("Test1Test1!2021"), bcrypt.DefaultCost) //user Test1
 	hash2, _ := bcrypt.GenerateFromPassword([]byte("Test2Test2!2022"), bcrypt.DefaultCost) //user Test2
+	users := []*models.User{
+		{
 
-	err := migrations.SecretModelInit(db, mockLog, string(hash1), string(hash2))
+			Username: "Test1",
+			Password: string(hash1),
+			Email:    "test1@test1.ru",
+		},
+		{
+
+			Username: "Test2",
+			Password: string(hash2),
+			Email:    "test2@test2.ru",
+		},
+	}
+	err := migrations.SecretModelInit(db, mockLog, users)
 
 	require.NoError(t, err)
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -108,8 +121,19 @@ func TestEventInit(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1).AddRow(2))
 
 	mock.ExpectCommit()
+	users := []*models.User{
+		{
 
-	err := migrations.EventModelInit(db, mockLog)
+			Username: "Test1",
+			Email:    "test1@test1.ru",
+		},
+		{
+
+			Username: "Test2",
+			Email:    "test2@test2.ru",
+		},
+	}
+	_, err := migrations.EventModelInit(db, mockLog, users)
 
 	require.NoError(t, err)
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -137,8 +161,23 @@ func TestEventParticipantInit(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1).AddRow(2))
 
 	mock.ExpectCommit()
-
-	err := migrations.EventParticipantModelInit(db, mockLog)
+	events := []*models.Event{
+		{
+			Title:       "Test title",
+			Description: "Test about description my testing",
+			StartDate:   time.Now(),
+			Duration:    20,
+			CreatorID:   1,
+		},
+		{
+			Title:       "Head of comunication",
+			Description: "Meet with workers in my company for test",
+			StartDate:   time.Now(),
+			Duration:    30,
+			CreatorID:   2,
+		},
+	}
+	err := migrations.EventParticipantModelInit(db, mockLog, events)
 
 	require.NoError(t, err)
 	require.NoError(t, mock.ExpectationsWereMet())

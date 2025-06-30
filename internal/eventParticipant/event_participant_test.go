@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db/mock"
 	"github.com/stretchr/testify/require"
@@ -21,7 +22,7 @@ func TestAddParticipant(t *testing.T) {
 	mock.ExpectCommit()
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventParticipantRepository(dbWrapper)
-	repo.DataBase.DB = repo.DataBase.DB.Model(&EventParticipant{}) // Установка модели таблицы
+	repo.DataBase.DB = repo.DataBase.DB.Model(&models.EventParticipant{}) // Установка модели таблицы
 	err := repo.AddParticipant(uint(1), uint(1))
 	require.NoError(t, err, "Add participant failed")
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -37,7 +38,7 @@ func TestRemoveParticipant(t *testing.T) {
 	mock.ExpectCommit()
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventParticipantRepository(dbWrapper)
-	repo.DataBase.DB = repo.DataBase.DB.Model(&EventParticipant{}) // Установка модели таблицы
+	repo.DataBase.DB = repo.DataBase.DB.Model(&models.EventParticipant{}) // Установка модели таблицы
 	err := repo.RemoveParticipant(uint(1), uint(1))
 	require.NoError(t, err, "Remove participant failed")
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -57,13 +58,11 @@ func TestGetEventParticipants(t *testing.T) {
 
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventParticipantRepository(dbWrapper)
-	repo.DataBase.DB = repo.DataBase.DB.Model(&EventParticipant{}) // Установка модели таблицы
+	repo.DataBase.DB = repo.DataBase.DB.Model(&models.EventParticipant{}) // Установка модели таблицы
 	participants, err := repo.GetEventParticipants(uint(1))
 	require.NoError(t, err, "Get event participants failed")
 	require.Len(t, participants, 1)
 	require.Equal(t, uint(1), participants[0].ID)
-	require.Equal(t, "testuser", participants[0].Username)
-	require.Equal(t, "test@example.com", participants[0].Email)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -85,7 +84,7 @@ func TestGetUserEvents(t *testing.T) {
 
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventParticipantRepository(dbWrapper)
-	repo.DataBase.DB = repo.DataBase.DB.Model(&EventParticipant{}) // Установка модели таблицы
+	repo.DataBase.DB = repo.DataBase.DB.Model(&models.EventParticipant{}) // Установка модели таблицы
 	events, err := repo.GetUserEvents(uint(1))
 	require.NoError(t, err, "Get user events failed")
 	require.Len(t, events, 1)
@@ -103,7 +102,7 @@ func TestIsParticipant(t *testing.T) {
 
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventParticipantRepository(dbWrapper)
-	repo.DataBase.DB = repo.DataBase.DB.Model(&EventParticipant{}) // Установка модели таблицы
+	repo.DataBase.DB = repo.DataBase.DB.Model(&models.EventParticipant{}) // Установка модели таблицы
 	isParticipant, err := repo.IsParticipant(uint(1), uint(1))
 	require.NoError(t, err, "Check participant failed")
 	require.True(t, isParticipant, "User should be a participant")

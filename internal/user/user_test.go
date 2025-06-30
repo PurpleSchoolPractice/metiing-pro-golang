@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -26,7 +27,7 @@ func TestCreateUser(t *testing.T) {
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := user.NewUserRepository(dbWrapper)
 
-	newUser := user.NewUser("email@example.com", "password", "testuser")
+	newUser := models.NewUser("email@example.com", "password", "testuser")
 	createdUser, err := repo.Create(newUser)
 	require.NoError(t, err, "Create user failed")
 	require.Equal(t, "testuser", createdUser.Username, "Username does not match")
@@ -92,7 +93,7 @@ func TestUpdateUser(t *testing.T) {
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := user.NewUserRepository(dbWrapper)
 
-	userToUpdate := &user.User{
+	userToUpdate := &models.User{
 		Model:    gorm.Model{ID: 1},
 		Username: "newusername",
 		Password: "newpassword",
@@ -117,7 +118,7 @@ func TestDeleteUser(t *testing.T) {
 
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := user.NewUserRepository(dbWrapper)
-	userToDelete := &user.User{
+	userToDelete := &models.User{
 		Model:    gorm.Model{ID: 1},
 		Username: "testuser",
 		Password: "password",

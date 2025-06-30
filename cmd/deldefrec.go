@@ -19,10 +19,21 @@ var deldefrecCmd = &cobra.Command{
 	Long:  `This command deletes default records from users, secrets, events, and event_participants tables.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Running...")
-		err := migrations.Migrate()
+		force, err := cmd.Flags().GetBool("force")
 		if err != nil {
-			log.Println(err)
-			os.Exit(1)
+			log.Println("Error to get force flag")
+		}
+		if force {
+			err = migrations.DeleteAllTableWithDate()
+			if err != nil {
+				log.Println(err)
+			}
+		} else {
+			err = migrations.Migrate()
+			if err != nil {
+				log.Println(err)
+				os.Exit(1)
+			}
 		}
 		fmt.Println("Default records deleted successfully")
 		os.Exit(0)
@@ -31,6 +42,8 @@ var deldefrecCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(deldefrecCmd)
+	//флаги
+	deldefrecCmd.Flags().BoolP("force", "f", false, "Delete al table with date")
 
 	// Here you will define your flags and configuration settings.
 

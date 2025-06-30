@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/secret"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/jwt"
@@ -29,7 +30,7 @@ func NewAuthService(
 }
 
 // Register - регистрация пользователя
-func (service *AuthService) Register(email, password, username string) (*user.User, error) {
+func (service *AuthService) Register(email, password, username string) (*models.User, error) {
 	existUser, _ := service.UserRepository.FindByEmail(email)
 	if existUser != nil {
 		return nil, errors.New(ErrUserExists)
@@ -41,7 +42,7 @@ func (service *AuthService) Register(email, password, username string) (*user.Us
 	if err != nil {
 		return nil, err
 	}
-	newUser := user.User{
+	newUser := models.User{
 		Email:    email,
 		Password: string(hashedPassword),
 		Username: username,

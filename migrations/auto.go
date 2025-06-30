@@ -32,34 +32,23 @@ func InitModelMigration() {
 		logging.Error((err.Error()))
 		return
 	}
-	//удаляет все записи с БД
-	//database.Migrator().DropTable(&user.User{}, &secret.Secret{}, &event.Event{}, &eventParticipant.EventParticipant{})
 
-	userSecret1, userSecret2, err := UserModelInit(database, logging)
+	users, err := UserModelInit(database, logging)
 	if err != nil {
 		logging.Error(err.Error())
 	}
-	err = SecretModelInit(database, logging, userSecret1, userSecret2)
+	err = SecretModelInit(database, logging, users)
 	if err != nil {
 		logging.Error(err.Error())
 	}
-	err = EventModelInit(database, logging)
+
+	events, err := EventModelInit(database, logging, users)
 	if err != nil {
 		logging.Error(err.Error())
 	}
-	err = EventParticipantModelInit(database, logging)
+	err = EventParticipantModelInit(database, logging, events)
 	if err != nil {
 		logging.Error(err.Error())
 	}
-	//database.Migrator().DropTable(&user.User{}, &secret.Secret{}, &event.Event{}, &eventParticipant.EventParticipant{})
-	//Автомиграция таблиц
-	//err = database.AutoMigrate(
-	//	&user.User{},
-	//	&secret.Secret{},
-	//	&event.Event{},
-	//	&eventParticipant.EventParticipant{},
-	//)
-	//if err != nil {
-	//	logging.Info(err.Error())
-	//}
+
 }

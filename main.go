@@ -72,14 +72,17 @@ func setupApplication() *AppComponents {
 	// Инициализация репозитория событий
 	eventRepo := event.NewEventRepository(database)
 
-	// Регистрация обработчиков событий
-	event.NewEventHandler(router, event.EventHandlerDeps{
-		EventRepository: eventRepo,
-		JWTService:      jwtService,
-	})
-
 	// Инициализация репозитория участников событий
 	eventParticipantRepo := eventParticipant.NewEventParticipantRepository(database)
+
+	// Регистрация обработчиков событий
+	event.NewEventHandler(router, event.EventHandlerDeps{
+		EventRepository:  eventRepo,
+		UserRepository:   userRepo,
+		EventParticipant: eventParticipantRepo,
+		JWTService:       jwtService,
+		Config:           cfg,
+	})
 
 	// Регистрация обработчиков участников событий
 	eventParticipant.NewEventParticipantHandler(router, eventParticipant.EventParticipantDepsHandler{
