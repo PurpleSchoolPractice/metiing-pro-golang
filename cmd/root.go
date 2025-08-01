@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ var appConfig Cfg
 
 // rootCmd представляет собой базовую команду при вызове без подкоманд
 var rootCmd = &cobra.Command{
-	Use:   "meeting-pro",
+	Use:   "meeting",
 	Short: "Meeting Pro - приложение для управления встречами",
 	Long:  `Meeting Pro - приложение для управления встречами и расписаниями встреч.`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -41,7 +41,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	// Указываем путь к конфигурационному файлу
-	rootCmd.PersistentFlags().String("config", "", "путь к конфигурационному файлу")
+	rootCmd.PersistentFlags().String("config", "config.yaml", "путь к конфигурационному файлу")
 	viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
 
 	rootCmd.PersistentFlags().String("port", "8080", "порт сервера")
@@ -53,6 +53,7 @@ func init() {
 	rootCmd.PersistentFlags().String("log-level", "info", "уровень логирования (debug, info, warn, error)")
 
 	viper.AutomaticEnv()
+
 }
 
 func initConfig() {
