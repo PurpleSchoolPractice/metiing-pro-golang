@@ -50,6 +50,8 @@ func (handler *AuthHandler) Register() http.HandlerFunc {
 		}
 
 		data := RegisterResponse{
+			UserId:       user.ID,
+			Email:        user.Email,
 			AccessToken:  tokenPair.AccessToken,
 			RefreshToken: tokenPair.RefreshToken,
 		}

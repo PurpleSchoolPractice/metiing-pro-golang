@@ -3,6 +3,7 @@ package user
 import (
 	"net/http"
 
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/convert"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/jwt"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/middleware"
@@ -52,7 +53,7 @@ func (handler *UserHandler) GetAllUsers() http.HandlerFunc {
 func (handler *UserHandler) GetUserByID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//Парсим ID из строки
-		id, err := convert.ParseId(r)
+		id, err := convert.ParseId(r, "id")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -84,7 +85,7 @@ func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 			return
 		}
 		//Парсим ID из строки
-		userId, err := convert.ParseId(r)
+		userId, err := convert.ParseId(r, "id")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -96,7 +97,7 @@ func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 
 		}
 		//Заполняем данные юзера для обновления
-		user := &User{
+		user := &models.User{
 			Model: gorm.Model{
 				ID: userId,
 			},
@@ -104,7 +105,7 @@ func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 			Password: string(hashedPassword),
 			Email:    body.Email,
 		}
-		var updatedUser *User
+		var updatedUser *models.User
 		//Проверяем что обновляем именно авторизованного юзера, а не кого другого
 		if userIdContext == userId {
 			updatedUser, err = handler.UserRepository.Update(user)
@@ -124,11 +125,11 @@ func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 // Удаление пользователя
 func (handler *UserHandler) DeleteUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := convert.ParseId(r)
+		id, err := convert.ParseId(r, "id")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
-		user := &User{
+		user := &models.User{
 			Model: gorm.Model{
 				ID: id,
 			},

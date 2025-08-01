@@ -1,8 +1,7 @@
 package eventParticipant
 
 import (
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/types"
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
 	"gorm.io/gorm"
 )
@@ -19,36 +18,44 @@ func NewEventParticipantRepository(dataBase *db.Db) *EventParticipantRepository 
 func (repo *EventParticipantRepository) AddParticipant(eventID, userID uint) error {
 	db := repo.DataBase.DB.
 		Session(&gorm.Session{NewDB: true}).
-		Model(&EventParticipant{})
-	participant := NewEventParticipant(eventID, userID)
+		Model(&models.EventParticipant{})
+	participant := models.NewEventParticipant(eventID, userID)
 	if err := db.Create(participant).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
+// AddParticipant обновляет статус пользователя
+func (repo *EventParticipantRepository) UpdateParticipant(eventPart *models.EventParticipant) (*models.EventParticipant, error) {
+	result := repo.DataBase.DB.Save(eventPart)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return eventPart, nil
+}
+
 // RemoveParticipant удаляет пользователя из события
 func (repo *EventParticipantRepository) RemoveParticipant(eventID, userID uint) error {
 	db := repo.DataBase.DB.
 		Session(&gorm.Session{NewDB: true}).
-		Model(&EventParticipant{})
+		Model(&models.EventParticipant{})
 	if err := db.Where("event_id = ? AND user_id = ?", eventID, userID).
-		Delete(&EventParticipant{}).Error; err != nil {
+		Delete(&models.EventParticipant{}).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 // GetEventParticipants возвращает список участников события
-func (repo *EventParticipantRepository) GetEventParticipants(eventID uint) ([]user.User, error) {
-	db := repo.DataBase.DB.
-		Session(&gorm.Session{NewDB: true}).
-		Model(&EventParticipant{})
-	var users []user.User
-	err := db.Table("users").
-		Joins("JOIN event_participants ON users.id = event_participants.user_id").
-		Where("event_participants.event_id = ?", eventID).
-		Find(&users).Error
+func (repo *EventParticipantRepository) GetEventParticipants(eventID uint) ([]models.User, error) {
+	var users []models.User
+	err := repo.DataBase.DB.
+		Table("event_participants").
+		Joins("JOIN users ON users.id = event_participants.user_id").
+		Where("event_participants.event_id = ? AND event_participants.deleted_at IS NULL AND users.deleted_at IS NULL", eventID).
+		Select("users.id, users.username, users.email"). // Выбираем только нужные поля
+		Scan(&users).Error
 	if err != nil {
 		return nil, err
 	}
@@ -56,11 +63,11 @@ func (repo *EventParticipantRepository) GetEventParticipants(eventID uint) ([]us
 }
 
 // GetUserEvents возвращает список событий, в которых участвует пользователь
-func (repo *EventParticipantRepository) GetUserEvents(userID uint) ([]types.Event, error) {
+func (repo *EventParticipantRepository) GetUserEvents(userID uint) ([]models.Event, error) {
 	db := repo.DataBase.DB.
 		Session(&gorm.Session{NewDB: true}).
-		Model(&EventParticipant{})
-	var events []types.Event
+		Model(&models.EventParticipant{})
+	var events []models.Event
 	err := db.Table("events").
 		Joins("JOIN event_participants ON events.id = event_participants.event_id").
 		Where("event_participants.user_id = ?", userID).
@@ -75,9 +82,9 @@ func (repo *EventParticipantRepository) GetUserEvents(userID uint) ([]types.Even
 func (repo *EventParticipantRepository) IsParticipant(eventID, userID uint) (bool, error) {
 	db := repo.DataBase.DB.
 		Session(&gorm.Session{NewDB: true}).
-		Model(&EventParticipant{})
+		Model(&models.EventParticipant{})
 	var count int64
-	err := db.Model(&EventParticipant{}).
+	err := db.Model(&models.EventParticipant{}).
 		Where("event_id = ? AND user_id = ?", eventID, userID).
 		Count(&count).Error
 	if err != nil {
@@ -90,7 +97,7 @@ func (repo *EventParticipantRepository) IsParticipant(eventID, userID uint) (boo
 func (repo *EventParticipantRepository) IsEventCreatorById(eventID, userID uint) (bool, error) {
 	db := repo.DataBase.DB.
 		Session(&gorm.Session{NewDB: true}).
-		Model(&EventParticipant{})
+		Model(&models.EventParticipant{})
 	var count int64
 	err := db.Table("events").
 		Where("id = ? AND creator_id = ?", eventID, userID).
@@ -99,4 +106,14 @@ func (repo *EventParticipantRepository) IsEventCreatorById(eventID, userID uint)
 		return false, err
 	}
 	return count > 0, nil
+}
+
+// получаем пользователей с приглашениями по событию
+func (repo EventParticipantRepository) GetUsersWithInvites(eventID uint) (*models.EventParticipant, error) {
+	var inviteUsers *models.EventParticipant
+	result := repo.DataBase.DB.Where("event_id = ?", eventID).Find(&inviteUsers)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return inviteUsers, nil
 }

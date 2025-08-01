@@ -53,7 +53,6 @@ func init() {
 	rootCmd.PersistentFlags().String("log-level", "info", "уровень логирования (debug, info, warn, error)")
 
 	viper.AutomaticEnv()
-
 }
 
 func initConfig() {

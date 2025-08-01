@@ -3,6 +3,7 @@ package user
 import (
 	"errors"
 
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
 	"gorm.io/gorm"
 )
@@ -19,7 +20,7 @@ func NewUserRepository(dataBase *db.Db) *UserRepository {
 }
 
 // Create создает новую запись в базе данных
-func (r *UserRepository) Create(u *User) (*User, error) {
+func (r *UserRepository) Create(u *models.User) (*models.User, error) {
 	if err := r.DataBase.Create(u); err != nil {
 		return nil, err
 	}
@@ -27,8 +28,8 @@ func (r *UserRepository) Create(u *User) (*User, error) {
 }
 
 // FindByEmail находит пользователя по указанному адресу электронной почты в базе данных.
-func (r *UserRepository) FindByEmail(email string) (*User, error) {
-	var u User
+func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
+	var u models.User
 	err := r.DataBase.
 		Session(&gorm.Session{NewDB: true}).
 		Where("email = ?", email).
@@ -44,9 +45,9 @@ func (r *UserRepository) FindByEmail(email string) (*User, error) {
 }
 
 // FindAllUsers находит всех пользователей в базе данных.
-func (repo *UserRepository) FindAllUsers() ([]User, error) {
-	repo.DataBase.DB = repo.DataBase.DB.Model(&User{})
-	var users []User
+func (repo *UserRepository) FindAllUsers() ([]models.User, error) {
+	repo.DataBase.DB = repo.DataBase.DB.Model(&models.User{})
+	var users []models.User
 	result := repo.DataBase.DB.Find(&users)
 	if result.Error != nil {
 		return nil, result.Error
@@ -55,8 +56,8 @@ func (repo *UserRepository) FindAllUsers() ([]User, error) {
 }
 
 // Update обновляет информацию о пользователе в базе данных.
-func (repo *UserRepository) Update(user *User) (*User, error) {
-	result := repo.DataBase.DB.Model(&User{}).Where("id = ?", user.ID).Updates(map[string]interface{}{
+func (repo *UserRepository) Update(user *models.User) (*models.User, error) {
+	result := repo.DataBase.DB.Model(&models.User{}).Where("id = ?", user.ID).Updates(map[string]interface{}{
 		"username": user.Username,
 		"password": user.Password,
 		"email":    user.Email,
@@ -68,16 +69,16 @@ func (repo *UserRepository) Update(user *User) (*User, error) {
 }
 
 // Delete удаляет пользователя из базы данных.
-func (repo *UserRepository) Delete(user *User) error {
-	repo.DataBase.DB = repo.DataBase.DB.Model(&User{})
+func (repo *UserRepository) Delete(user *models.User) error {
+	repo.DataBase.DB = repo.DataBase.DB.Model(&models.User{})
 	result := repo.DataBase.DB.Delete(user)
 	if result.Error != nil {
 		return result.Error
 	}
 	return nil
 }
-func (r *UserRepository) FindByid(id uint) (*User, error) {
-	var u User
+func (r *UserRepository) FindByid(id uint) (*models.User, error) {
+	var u models.User
 	err := r.DataBase.
 		Session(&gorm.Session{NewDB: true}).
 		Where("id = ?", id).

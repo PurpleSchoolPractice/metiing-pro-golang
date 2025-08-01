@@ -23,11 +23,11 @@ func setupAuthHandler(t *testing.T) (*auth.AuthHandler, sqlmock.Sqlmock, func())
 	gormDB, mockDB, cleanup := mock.SetupMockDB(t)
 	database := &db.Db{DB: gormDB}
 	userRepo := user.NewUserRepository(database)
-	
+
 	// Создаем простой логгер для тестов
 	log := logger.NewLogger(&configs.Config{})
 	secretRepo := secret.NewSecretRepository(database, log)
-	
+
 	jwtService := jwt.NewJWT("test-secret")
 
 	authService := auth.NewAuthService(userRepo, secretRepo, jwtService)
