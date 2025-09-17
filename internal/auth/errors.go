@@ -9,5 +9,7 @@ const (
 	ErrUserNotFound        = "User not found"
 	ErrGenerateToken       = "Failed to generate token"
 	InvalidPassword        = "The password must contain 12 characters including numbers and special characters."
-	InValidPasOrEmail      = "Invalid passwod or email"
+	InValidPasOrEmail      = "Invalid password or email"
+	ErrCreatePasswordReset = "Failed to create password reset"
+	ErrTokenExpired        = "Token Expired"
 )

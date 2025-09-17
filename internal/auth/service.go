@@ -1,31 +1,39 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/passwordReset"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/secret"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/jwt"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/sendmail"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
-	UserRepository   *user.UserRepository
-	SecretRepository *secret.SecretRepository
-	JWT              *jwt.JWT
+	UserRepository          *user.UserRepository
+	SecretRepository        *secret.SecretRepository
+	passwordResetRepository *passwordReset.PasswordResetRepository
+	JWT                     *jwt.JWT
 }
 
 // NewAuthService - конструктор сервиса авторизации
 func NewAuthService(
 	userRepository *user.UserRepository,
 	secretRepository *secret.SecretRepository,
+	passwordResetRepository *passwordReset.PasswordResetRepository,
 	jwtService *jwt.JWT,
 ) *AuthService {
 	return &AuthService{
-		UserRepository:   userRepository,
-		SecretRepository: secretRepository,
-		JWT:              jwtService,
+		UserRepository:          userRepository,
+		SecretRepository:        secretRepository,
+		passwordResetRepository: passwordResetRepository,
+		JWT:                     jwtService,
 	}
 }
 
@@ -99,4 +107,78 @@ func (service *AuthService) RefreshTokens(refreshToken, accessToken string) (*jw
 	}
 
 	return tokenPair, nil
+}
+
+func (service *AuthService) ForgotPassword(config *configs.Config, email string) error {
+	existUser, err := service.UserRepository.FindByEmail(email)
+	if err != nil || existUser == nil {
+		return errors.New(ErrUserNotFound)
+	}
+	bytes := make([]byte, 32)
+	if _, err := rand.Read(bytes); err != nil {
+		return err
+	}
+	token := hex.EncodeToString(bytes)
+	passwordReset := models.NewPasswordReset(existUser.ID, token)
+	err = service.passwordResetRepository.Create(passwordReset)
+	if err != nil {
+		return errors.New(ErrCreatePasswordReset)
+	}
+	sendmail.SendEmailPasswordReset(config, email, token)
+	return nil
+}
+
+func (service *AuthService) ResetPassword(token, newPassword string) (*models.User, error) {
+	// Находим активный токен
+	activeToken, err := service.passwordResetRepository.GetActiveToken(token)
+	if err != nil {
+		return nil, err
+	}
+	if activeToken == nil {
+		return nil, errors.New(ErrTokenExpired)
+	}
+
+	// Находим пользователя по ID из токена
+	user, err := service.UserRepository.FindByid(activeToken.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New(ErrUserNotFound)
+	}
+
+	// Валидируем пароль
+	if err := secret.ValidatePassword(newPassword); err != nil {
+		return nil, errors.New(InvalidPassword)
+	}
+
+	// Хэшируем пароль
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	// Обновляем пароль пользователя
+	user.Password = string(hashedPassword)
+	updatedUser, err := service.UserRepository.Update(user)
+	if err != nil {
+		return nil, err
+	}
+
+	// Обновляем секрет
+	oldSecret, err := service.SecretRepository.GetByUserID(updatedUser.ID)
+	if err != nil {
+		return nil, err
+	}
+	_, err = service.SecretRepository.Update(oldSecret.ID, string(hashedPassword))
+	if err != nil {
+		return nil, err
+	}
+
+	// Помечаем токен как использованный
+	if err := service.passwordResetRepository.TokenUsed(activeToken.ID); err != nil {
+		return nil, err
+	}
+
+	return updatedUser, nil
 }

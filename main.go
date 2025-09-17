@@ -14,6 +14,7 @@ import (
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/event"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/eventParticipant"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/logger"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/passwordReset"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/secret"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/server"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
@@ -46,6 +47,7 @@ func setupApplication() *AppComponents {
 	// Инициализация слоя данных
 	userRepo := user.NewUserRepository(database)
 	secretRepo := secret.NewSecretRepository(database, log)
+	passwordReset := passwordReset.NewPasswordResetRepository(database, log)
 
 	// Создаем JWT сервис с настройками
 	jwtService := jwt.NewJWT(cfg.Auth.Secret)
@@ -54,7 +56,7 @@ func setupApplication() *AppComponents {
 	jwtService.RefreshTokenTTL = time.Minute * 5
 
 	// Инициализация сервисов
-	authService := auth.NewAuthService(userRepo, secretRepo, jwtService)
+	authService := auth.NewAuthService(userRepo, secretRepo, passwordReset, jwtService)
 
 	//Инициализация миграций
 	migrations.InitModelMigration()

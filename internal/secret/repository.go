@@ -151,3 +151,19 @@ func (r *SecretRepository) List(limit, offset int) ([]Secret, error) {
 	r.logger.Info("Retrieved %d secrets", len(secrets), "limit", limit, "offset", offset)
 	return secrets, nil
 }
+
+// GetByUserID получает секрет по userID
+func (r *SecretRepository) GetByUserID(userId uint) (*Secret, error) {
+	r.logger.Debug("Get secret by userID", "userId", userId)
+
+	var secret Secret
+	if err := r.DataBase.
+		Where("user_id = ?", userId).
+		First(&secret).Error; err != nil {
+		r.logger.Error("Error getting secret", "userId", userId, "error", err.Error())
+		return nil, err
+	}
+
+	r.logger.Info("Secret retrieved successfully", "id", secret.ID)
+	return &secret, nil
+}

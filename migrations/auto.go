@@ -51,4 +51,12 @@ func InitModelMigration() {
 		logging.Error(err.Error())
 	}
 
+	err = PreviousPasswordModelInit(database, logging)
+	if err != nil {
+		logging.Error(err.Error())
+	}
+	err = PasswordResetModelInit(database, logging)
+	if err != nil {
+		logging.Error(err.Error())
+	}
 }
