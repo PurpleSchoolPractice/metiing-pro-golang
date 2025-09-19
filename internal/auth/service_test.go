@@ -347,10 +347,10 @@ func TestResetPasswordSuccess(t *testing.T) {
 	defer cleanup()
 
 	token := "fdf77f4394224b3436b30b449bcbd99c8f930f5e7bee01bee5eecea6dccbb1e8"
-	userID := uint(1)
+	userId := uint(1)
 	newPassword := "TestPassword1!"
-	secretID := uint(10)
-	passwordResetID := uint(1)
+	secretId := uint(10)
+	passwordResetId := uint(1)
 
 	// === password_resets (SELECT active token) ===
 	mockDB.ExpectQuery(`SELECT \* FROM "password_resets"`).
@@ -358,8 +358,8 @@ func TestResetPasswordSuccess(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "user_id", "token", "used", "expires_at", "created_at", "updated_at",
 		}).AddRow(
-			passwordResetID,
-			userID,
+			passwordResetId,
+			userId,
 			token,
 			false,
 			time.Now().Add(10*time.Minute),
@@ -369,11 +369,11 @@ func TestResetPasswordSuccess(t *testing.T) {
 
 	// === users (SELECT by id) ===
 	mockDB.ExpectQuery(`SELECT \* FROM "users"`).
-		WithArgs(userID, sqlmock.AnyArg()).
+		WithArgs(userId, sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "email", "password", "created_at", "updated_at",
 		}).AddRow(
-			userID,
+			userId,
 			"test@example.com",
 			"old_hashed_password",
 			time.Now(),
@@ -388,19 +388,19 @@ func TestResetPasswordSuccess(t *testing.T) {
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
-			userID,
+			userId,
 		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mockDB.ExpectCommit()
 
 	// === secrets (SELECT by user_id) - первый запрос ===
 	mockDB.ExpectQuery(`SELECT \* FROM "secrets"`).
-		WithArgs(userID, sqlmock.AnyArg()).
+		WithArgs(userId, sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "user_id", "secret", "created_at", "updated_at", "current_password",
 		}).AddRow(
-			secretID,
-			userID,
+			secretId,
+			userId,
 			"old_secret_value",
 			time.Now(),
 			time.Now(),
@@ -409,12 +409,12 @@ func TestResetPasswordSuccess(t *testing.T) {
 
 	// === secrets (SELECT by id) - второй запрос ===
 	mockDB.ExpectQuery(`SELECT \* FROM "secrets" WHERE "secrets"."id" = \$1 AND "secrets"."deleted_at" IS NULL ORDER BY "secrets"."id" LIMIT \$2`).
-		WithArgs(secretID, 1).
+		WithArgs(secretId, 1).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "user_id", "secret", "created_at", "updated_at", "current_password",
 		}).AddRow(
-			secretID,
-			userID,
+			secretId,
+			userId,
 			"old_secret_value",
 			time.Now(),
 			time.Now(),
@@ -423,7 +423,7 @@ func TestResetPasswordSuccess(t *testing.T) {
 
 	// === previous_passwords (SELECT by secret_id) - проверка истории ===
 	mockDB.ExpectQuery(`SELECT \* FROM "previous_passwords" WHERE "previous_passwords"."secret_id" = \$1`).
-		WithArgs(secretID).
+		WithArgs(secretId).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "secret_id", "password", "created_at", "updated_at",
 		})) // Пустой результат - нет предыдущих паролей
@@ -434,7 +434,7 @@ func TestResetPasswordSuccess(t *testing.T) {
 	// INSERT в previous_passwords (выполняется ПЕРВЫМ в транзакции)
 	mockDB.ExpectQuery(`INSERT INTO "previous_passwords" \("secret_id","password","created_at"\) VALUES \(\$1,\$2,\$3\) RETURNING "id"`).
 		WithArgs(
-			secretID,
+			secretId,
 			"old_current_password_hash",
 			sqlmock.AnyArg(),
 		).
@@ -442,7 +442,7 @@ func TestResetPasswordSuccess(t *testing.T) {
 
 	// === previous_passwords (COUNT) - проверка количества ПОСЛЕ INSERT ===
 	mockDB.ExpectQuery(`SELECT count\(\*\) FROM "previous_passwords" WHERE secret_id = \$1`).
-		WithArgs(secretID).
+		WithArgs(secretId).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(4)) // Теперь 4 (3 было + 1 новый)
 
 	// UPDATE secrets
@@ -451,9 +451,9 @@ func TestResetPasswordSuccess(t *testing.T) {
 			sqlmock.AnyArg(), // created_at
 			sqlmock.AnyArg(), // updated_at
 			nil,              // deleted_at
-			userID,           // user_id
+			userId,           // user_id
 			sqlmock.AnyArg(), // new current_password hash
-			secretID,         // id
+			secretId,         // id
 		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -465,7 +465,7 @@ func TestResetPasswordSuccess(t *testing.T) {
 		WithArgs(
 			true,             // used
 			sqlmock.AnyArg(), // updated_at
-			passwordResetID,  // id
+			passwordResetId,  // id
 			sqlmock.AnyArg(), // expires_at (текущее время)
 		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
@@ -475,7 +475,7 @@ func TestResetPasswordSuccess(t *testing.T) {
 	updatedUser, err := authService.ResetPassword(token, newPassword)
 	require.NoError(t, err)
 	require.NotNil(t, updatedUser)
-	require.Equal(t, userID, updatedUser.ID)
+	require.Equal(t, userId, updatedUser.ID)
 
 	// Проверяем, что все ожидания были выполнены
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -508,7 +508,7 @@ func TestResetPasswordInvalidNewPassword(t *testing.T) {
 	defer cleanup()
 
 	token := "valid_token"
-	userID := uint(1)
+	userId := uint(1)
 
 	// password_resets (SELECT активный токен)
 	mockDB.ExpectQuery(`SELECT \* FROM "password_resets"`).
@@ -517,7 +517,7 @@ func TestResetPasswordInvalidNewPassword(t *testing.T) {
 			"id", "user_id", "token", "used", "expires_at", "created_at", "updated_at",
 		}).AddRow(
 			1,
-			userID,
+			userId,
 			token,
 			false,
 			time.Now().Add(10*time.Minute),
@@ -527,11 +527,11 @@ func TestResetPasswordInvalidNewPassword(t *testing.T) {
 
 	// users (SELECT by id)
 	mockDB.ExpectQuery(`SELECT \* FROM "users"`).
-		WithArgs(userID, sqlmock.AnyArg()).
+		WithArgs(userId, sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "email", "password", "created_at", "updated_at",
 		}).AddRow(
-			userID,
+			userId,
 			"test@example.com",
 			"old_hashed_password",
 			time.Now(),
@@ -552,7 +552,7 @@ func TestResetPasswordUserUpdateError(t *testing.T) {
 	defer cleanup()
 
 	token := "valid_token"
-	userID := uint(1)
+	userId := uint(1)
 
 	// password_resets (SELECT активный токен)
 	mockDB.ExpectQuery(`SELECT \* FROM "password_resets"`).
@@ -561,7 +561,7 @@ func TestResetPasswordUserUpdateError(t *testing.T) {
 			"id", "user_id", "token", "used", "expires_at", "created_at", "updated_at",
 		}).AddRow(
 			1,
-			userID,
+			userId,
 			token,
 			false,
 			time.Now().Add(10*time.Minute),
@@ -571,11 +571,11 @@ func TestResetPasswordUserUpdateError(t *testing.T) {
 
 	// users (SELECT by id)
 	mockDB.ExpectQuery(`SELECT \* FROM "users"`).
-		WithArgs(userID, sqlmock.AnyArg()).
+		WithArgs(userId, sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "email", "password", "created_at", "updated_at",
 		}).AddRow(
-			userID,
+			userId,
 			"test@example.com",
 			"old_hashed_password",
 			time.Now(),
@@ -590,7 +590,7 @@ func TestResetPasswordUserUpdateError(t *testing.T) {
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
-			userID,
+			userId,
 		).
 		WillReturnError(errors.New("database error"))
 	mockDB.ExpectRollback() // Rollback при ошибке
@@ -609,9 +609,9 @@ func TestResetPasswordSecretUpdateError(t *testing.T) {
 	defer cleanup()
 
 	token := "valid_token"
-	userID := uint(1)
-	secretID := uint(10)
-	passwordResetID := uint(1)
+	userId := uint(1)
+	secretId := uint(10)
+	passwordResetId := uint(1)
 
 	// === password_resets (SELECT активный токен) ===
 	mockDB.ExpectQuery(`SELECT \* FROM "password_resets"`).
@@ -619,8 +619,8 @@ func TestResetPasswordSecretUpdateError(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "user_id", "token", "used", "expires_at", "created_at", "updated_at",
 		}).AddRow(
-			passwordResetID,
-			userID,
+			passwordResetId,
+			userId,
 			token,
 			false,
 			time.Now().Add(10*time.Minute),
@@ -630,11 +630,11 @@ func TestResetPasswordSecretUpdateError(t *testing.T) {
 
 	// === users (SELECT by id) ===
 	mockDB.ExpectQuery(`SELECT \* FROM "users"`).
-		WithArgs(userID, sqlmock.AnyArg()).
+		WithArgs(userId, sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "email", "password", "created_at", "updated_at",
 		}).AddRow(
-			userID,
+			userId,
 			"test@example.com",
 			"old_hashed_password",
 			time.Now(),
@@ -649,19 +649,19 @@ func TestResetPasswordSecretUpdateError(t *testing.T) {
 			sqlmock.AnyArg(), // password
 			sqlmock.AnyArg(), // username
 			sqlmock.AnyArg(), // updated_at
-			userID,           // id
+			userId,           // id
 		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mockDB.ExpectCommit()
 
 	// === secrets (SELECT by user_id) - первый запрос ===
 	mockDB.ExpectQuery(`SELECT \* FROM "secrets"`).
-		WithArgs(userID, sqlmock.AnyArg()).
+		WithArgs(userId, sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "user_id", "secret", "created_at", "updated_at", "current_password",
 		}).AddRow(
-			secretID,
-			userID,
+			secretId,
+			userId,
 			"old_secret_value",
 			time.Now(),
 			time.Now(),
@@ -670,12 +670,12 @@ func TestResetPasswordSecretUpdateError(t *testing.T) {
 
 	// === secrets (SELECT by id) - второй запрос ===
 	mockDB.ExpectQuery(`SELECT \* FROM "secrets" WHERE "secrets"."id" = \$1 AND "secrets"."deleted_at" IS NULL ORDER BY "secrets"."id" LIMIT \$2`).
-		WithArgs(secretID, 1).
+		WithArgs(secretId, 1).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "user_id", "secret", "created_at", "updated_at", "current_password",
 		}).AddRow(
-			secretID,
-			userID,
+			secretId,
+			userId,
 			"old_secret_value",
 			time.Now(),
 			time.Now(),
@@ -684,7 +684,7 @@ func TestResetPasswordSecretUpdateError(t *testing.T) {
 
 	// === previous_passwords (SELECT by secret_id) - проверка истории ===
 	mockDB.ExpectQuery(`SELECT \* FROM "previous_passwords" WHERE "previous_passwords"."secret_id" = \$1`).
-		WithArgs(secretID).
+		WithArgs(secretId).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "secret_id", "password", "created_at", "updated_at",
 		})) // Пустой результат
@@ -695,7 +695,7 @@ func TestResetPasswordSecretUpdateError(t *testing.T) {
 	// INSERT в previous_passwords
 	mockDB.ExpectQuery(`INSERT INTO "previous_passwords" \("secret_id","password","created_at"\) VALUES \(\$1,\$2,\$3\) RETURNING "id"`).
 		WithArgs(
-			secretID,
+			secretId,
 			"old_current_password_hash",
 			sqlmock.AnyArg(),
 		).
@@ -703,7 +703,7 @@ func TestResetPasswordSecretUpdateError(t *testing.T) {
 
 	// previous_passwords (COUNT)
 	mockDB.ExpectQuery(`SELECT count\(\*\) FROM "previous_passwords" WHERE secret_id = \$1`).
-		WithArgs(secretID).
+		WithArgs(secretId).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
 
 	// UPDATE secrets - ошибка
@@ -712,9 +712,9 @@ func TestResetPasswordSecretUpdateError(t *testing.T) {
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
 			nil,
-			userID,
+			userId,
 			sqlmock.AnyArg(),
-			secretID,
+			secretId,
 		).
 		WillReturnError(errors.New("update error"))
 

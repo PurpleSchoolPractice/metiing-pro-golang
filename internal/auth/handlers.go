@@ -149,7 +149,7 @@ func (handler *AuthHandler) CheckTokenExpirationDate() http.HandlerFunc {
 		}
 
 		res.JsonResponse(w, CheckTokenResponse{
-			UserID:    passwordReset.UserID,
+			UserId:    passwordReset.UserID,
 			Token:     passwordReset.Token,
 			ExpiresAt: passwordReset.ExpiresAt,
 		}, http.StatusOK)
@@ -176,7 +176,7 @@ func (handler *AuthHandler) ResetPassword() http.HandlerFunc {
 		}
 
 		res.JsonResponse(w, ResetPasswordResponse{
-			UserID:    updatedUser.ID,
+			UserId:    updatedUser.ID,
 			UpdatedAt: updatedUser.UpdatedAt,
 		}, http.StatusOK)
 	}

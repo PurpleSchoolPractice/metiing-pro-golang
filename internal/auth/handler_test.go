@@ -372,13 +372,13 @@ func TestForgotPasswordHandlerSuccess(t *testing.T) {
 	defer cleanup()
 
 	email := "test@example.com"
-	userID := 1
+	userId := 1
 
 	// Настройка ожиданий для БД
 	mockDB.ExpectQuery(`SELECT .* FROM "users" WHERE .*email.*`).
 		WithArgs(email, sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "email"}).
-			AddRow(userID, email))
+			AddRow(userId, email))
 
 	// INSERT password_resets
 	mockDB.ExpectBegin()
@@ -451,13 +451,13 @@ func TestForgotPasswordHandlerDBInsertError(t *testing.T) {
 	defer cleanup()
 
 	email := "test@example.com"
-	userID := 1
+	userId := 1
 
 	// Настройка ожиданий для БД
 	mockDB.ExpectQuery(`SELECT .* FROM "users" WHERE .*email.*`).
 		WithArgs(email, sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "email"}).
-			AddRow(userID, email))
+			AddRow(userId, email))
 
 	// Ошибка при вставке в password_resets
 	mockDB.ExpectBegin()
@@ -505,7 +505,7 @@ func TestCheckTokenExpirationDateSuccess(t *testing.T) {
 	defer cleanup()
 
 	token := "validToken"
-	userID := uint(1)
+	userId := uint(1)
 	expiresAt := time.Now().Add(1 * time.Hour)
 
 	// Правильный мок для запроса - ожидаем 4 аргумента
@@ -520,7 +520,7 @@ func TestCheckTokenExpirationDateSuccess(t *testing.T) {
 			"id", "user_id", "token", "used", "expires_at", "created_at", "updated_at",
 		}).AddRow(
 			1,
-			userID,
+			userId,
 			token,
 			false,
 			expiresAt,
@@ -548,7 +548,7 @@ func TestCheckTokenExpirationDateSuccess(t *testing.T) {
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(t, err)
 
-	require.Equal(t, userID, response.UserID)
+	require.Equal(t, userId, response.UserId)
 	require.Equal(t, token, response.Token)
 	require.WithinDuration(t, expiresAt, response.ExpiresAt, time.Second)
 
@@ -640,8 +640,8 @@ func TestResetPasswordHandlerSuccess(t *testing.T) {
 
 	token := "valid_token"
 	newPassword := "NewPassword123!"
-	userID := uint(1)
-	secretID := uint(10)
+	userId := uint(1)
+	secretId := uint(10)
 
 	// 1. SELECT из password_resets
 	mockDB.ExpectQuery(`SELECT \* FROM "password_resets"`).
@@ -649,46 +649,46 @@ func TestResetPasswordHandlerSuccess(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "user_id", "token", "used", "expires_at", "created_at", "updated_at",
 		}).AddRow(
-			1, userID, token, false, time.Now().Add(10*time.Minute), time.Now(), time.Now(),
+			1, userId, token, false, time.Now().Add(10*time.Minute), time.Now(), time.Now(),
 		))
 
 	// 2. SELECT из users
 	mockDB.ExpectQuery(`SELECT \* FROM "users"`).
-		WithArgs(userID, sqlmock.AnyArg()).
+		WithArgs(userId, sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "email", "password", "created_at", "updated_at",
 		}).AddRow(
-			userID, "test@example.com", "old_hash", time.Now(), time.Now(),
+			userId, "test@example.com", "old_hash", time.Now(), time.Now(),
 		))
 
 	// 3. UPDATE users
 	mockDB.ExpectBegin()
 	mockDB.ExpectExec(`UPDATE "users"`).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), userID).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), userId).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mockDB.ExpectCommit()
 
 	// 4. SELECT из secrets по user_id
 	mockDB.ExpectQuery(`SELECT \* FROM "secrets" WHERE user_id = \$1 AND "secrets"."deleted_at" IS NULL ORDER BY "secrets"."id" LIMIT \$2`).
-		WithArgs(userID, 1).
+		WithArgs(userId, 1).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "user_id", "secret", "created_at", "updated_at", "current_password",
 		}).AddRow(
-			secretID, userID, "old_secret", time.Now(), time.Now(), "old_current_password_hash",
+			secretId, userId, "old_secret", time.Now(), time.Now(), "old_current_password_hash",
 		))
 
 	// 5. SELECT из secrets по id
 	mockDB.ExpectQuery(`SELECT \* FROM "secrets" WHERE "secrets"."id" = \$1 AND "secrets"."deleted_at" IS NULL ORDER BY "secrets"."id" LIMIT \$2`).
-		WithArgs(secretID, 1).
+		WithArgs(secretId, 1).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "user_id", "secret", "created_at", "updated_at", "current_password",
 		}).AddRow(
-			secretID, userID, "old_secret", time.Now(), time.Now(), "old_current_password_hash",
+			secretId, userId, "old_secret", time.Now(), time.Now(), "old_current_password_hash",
 		))
 
 	// 6. SELECT из previous_passwords
 	mockDB.ExpectQuery(`SELECT \* FROM "previous_passwords" WHERE "previous_passwords"."secret_id" = \$1`).
-		WithArgs(secretID).
+		WithArgs(secretId).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "secret_id", "password", "created_at", "updated_at",
 		})) // Пустой результат
@@ -698,17 +698,17 @@ func TestResetPasswordHandlerSuccess(t *testing.T) {
 
 	// INSERT в previous_passwords
 	mockDB.ExpectQuery(`INSERT INTO "previous_passwords" \("secret_id","password","created_at"\) VALUES \(\$1,\$2,\$3\) RETURNING "id"`).
-		WithArgs(secretID, "old_current_password_hash", sqlmock.AnyArg()).
+		WithArgs(secretId, "old_current_password_hash", sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 
 	// COUNT previous_passwords
 	mockDB.ExpectQuery(`SELECT count\(\*\) FROM "previous_passwords" WHERE secret_id = \$1`).
-		WithArgs(secretID).
+		WithArgs(secretId).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
 
 	// UPDATE secrets
 	mockDB.ExpectExec(`UPDATE "secrets" SET "created_at"=\$1,"updated_at"=\$2,"deleted_at"=\$3,"user_id"=\$4,"current_password"=\$5 WHERE "secrets"."deleted_at" IS NULL AND "id" = \$6`).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, userID, sqlmock.AnyArg(), secretID).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, userId, sqlmock.AnyArg(), secretId).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mockDB.ExpectCommit()
@@ -746,8 +746,8 @@ func TestResetPasswordHandlerSuccess(t *testing.T) {
 		t.Errorf("Failed to unmarshal response: %v", err)
 	}
 
-	if response.UserID != userID {
-		t.Errorf("Expected user ID %d, got %d", userID, response.UserID)
+	if response.UserId != userId {
+		t.Errorf("Expected user ID %d, got %d", userId, response.UserId)
 	}
 
 	// Проверяем, что все ожидания выполнены

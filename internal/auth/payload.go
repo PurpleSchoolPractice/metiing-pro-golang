@@ -45,9 +45,9 @@ type CheckTokenRequest struct {
 }
 
 type CheckTokenResponse struct {
-	UserID    uint
-	Token     string `json:"token"`
-	ExpiresAt time.Time
+	UserId    uint      `json:"user_id"`
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 type ResetPasswordRequest struct {
@@ -56,6 +56,6 @@ type ResetPasswordRequest struct {
 }
 
 type ResetPasswordResponse struct {
-	UserID    uint
-	UpdatedAt time.Time
+	UserId    uint      `json:"user_id"`
+	UpdatedAt time.Time `json:"update_at"`
 }
