@@ -31,7 +31,14 @@ func Migrate() error {
 		logging.Error("Failed to delete default secrets")
 		return err
 	}
-
+	if err := database.Unscoped().Where("user_id = ?", 2).Delete(&models.PasswordReset{}).Error; err != nil {
+		logging.Error("Failed to delete default passwordReset")
+		return err
+	}
+	if err := database.Unscoped().Where("user_id = ?", 2).Delete(&secret.PreviousPassword{}).Error; err != nil {
+		logging.Error("Failed to delete default passwordReset")
+		return err
+	}
 	return nil
 }
 func DeleteAllTableWithDate() error {
@@ -40,7 +47,7 @@ func DeleteAllTableWithDate() error {
 		logging.Error(err.Error())
 		return err
 	}
-	database.Migrator().DropTable(&models.User{}, &secret.Secret{}, &models.Event{}, &models.EventParticipant{})
+	database.Migrator().DropTable(&models.User{}, &secret.Secret{}, &models.Event{}, &models.EventParticipant{}, &models.PasswordReset{})
 	logging.Info("All tables has deleted")
 	return nil
 }

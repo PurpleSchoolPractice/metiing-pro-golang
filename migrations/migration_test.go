@@ -182,3 +182,70 @@ func TestEventParticipantInit(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
+
+func TestPreviousPasswordInit(t *testing.T) {
+	db, mock, cleanup := mock.SetupMockDB(t)
+	defer cleanup()
+
+	mockLog := &MockLogger{}
+
+	mock.ExpectQuery(`SELECT count\(\*\) FROM information_schema.tables WHERE table_schema = CURRENT_SCHEMA\(\) AND table_name = \$1 AND table_type = \$2`).
+		WithArgs("previous_passwords", "BASE TABLE").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	// checkTable вызовет SELECT count(*) FROM "previous_passwords"
+	mock.ExpectQuery(`SELECT count\(\*\) FROM "previous_passwords"`).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	// Вставка записи (gorm делает INSERT ... RETURNING "id")
+	mock.ExpectBegin()
+	mock.ExpectQuery(`INSERT INTO "previous_passwords" .* RETURNING "id"`).
+		WithArgs(1, "testPassword", sqlmock.AnyArg()).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+	mock.ExpectCommit()
+
+	// Вызов миграции
+	err := migrations.PreviousPasswordModelInit(db, mockLog)
+	require.NoError(t, err)
+
+	// Проверка, что все ожидания выполнены
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestPasswordResetModelInit(t *testing.T) {
+	gdb, mock, cleanup := mock.SetupMockDB(t)
+	defer cleanup()
+
+	mockLog := &MockLogger{}
+
+	// Проверка, есть ли таблица
+	mock.ExpectQuery(`SELECT count\(\*\) FROM information_schema.tables WHERE table_schema = CURRENT_SCHEMA\(\) AND table_name = \$1 AND table_type = \$2`).
+		WithArgs("password_resets", "BASE TABLE").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	// Проверка количества записей в таблице
+	mock.ExpectQuery(`SELECT count\(\*\) FROM "password_resets"`).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	// Вставка записи (7 аргументов из-за gorm.Model)
+	mock.ExpectBegin()
+	mock.ExpectQuery(`INSERT INTO "password_resets" .* RETURNING "id"`).
+		WithArgs(
+			sqlmock.AnyArg(), // created_at
+			sqlmock.AnyArg(), // updated_at
+			nil,              // deleted_at
+			2,                // user_id
+			"testToken",      // token
+			false,            // used
+			sqlmock.AnyArg(), // expires_at
+		).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+	mock.ExpectCommit()
+
+	// Вызов миграции
+	err := migrations.PasswordResetModelInit(gdb, mockLog)
+	require.NoError(t, err)
+
+	// Проверка, что все ожидания выполнены
+	require.NoError(t, mock.ExpectationsWereMet())
+}

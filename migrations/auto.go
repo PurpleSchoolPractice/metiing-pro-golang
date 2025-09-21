@@ -36,19 +36,33 @@ func InitModelMigration() {
 	users, err := UserModelInit(database, logging)
 	if err != nil {
 		logging.Error(err.Error())
+		return
 	}
 	err = SecretModelInit(database, logging, users)
 	if err != nil {
 		logging.Error(err.Error())
+		return
 	}
 
 	events, err := EventModelInit(database, logging, users)
 	if err != nil {
 		logging.Error(err.Error())
+		return
 	}
 	err = EventParticipantModelInit(database, logging, events)
 	if err != nil {
 		logging.Error(err.Error())
+		return
 	}
 
+	err = PreviousPasswordModelInit(database, logging)
+	if err != nil {
+		logging.Error(err.Error())
+		return
+	}
+	err = PasswordResetModelInit(database, logging)
+	if err != nil {
+		logging.Error(err.Error())
+		return
+	}
 }

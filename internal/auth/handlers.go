@@ -29,6 +29,9 @@ func NewAuthHandler(mux *chi.Mux, deps AuthHandlerDeps) {
 	mux.HandleFunc("POST /auth/register", handler.Register())
 	mux.HandleFunc("POST /auth/login", handler.Login())
 	mux.HandleFunc("POST /auth/refresh", handler.RefreshToken())
+	mux.HandleFunc("POST /auth/forgot-password", handler.ForgotPassword())
+	mux.HandleFunc("POST /auth/check-token", handler.CheckTokenExpirationDate())
+	mux.HandleFunc("PUT /auth/reset-password", handler.ResetPassword())
 }
 
 // Register регистрирует пользователя
@@ -108,5 +111,73 @@ func (handler *AuthHandler) RefreshToken() http.HandlerFunc {
 			RefreshToken: tokenPair.RefreshToken,
 		}
 		res.JsonResponse(w, data, http.StatusOK)
+	}
+}
+
+// ForgotPassword Принимает запрос на восстановление пароля
+func (handler *AuthHandler) ForgotPassword() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body, err := request.HandelBody[ForgotPasswordRequest](w, r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		err = handler.AuthService.ForgotPassword(handler.Config, body.Email)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		res.JsonResponse(w, "A link to reset your password has been sent to your email.", http.StatusOK)
+	}
+}
+
+// CheckTokenExpirationDate Принимает запрос на проверку срока действия и неиспользованности временного токена для сброса пароля
+func (handler *AuthHandler) CheckTokenExpirationDate() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body, err := request.HandelBody[CheckTokenRequest](w, r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		passwordReset, err := handler.passwordResetRepository.GetActiveToken(body.Token)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		if passwordReset == nil {
+			http.Error(w, "Token not found", http.StatusNotFound)
+			return
+		}
+
+		res.JsonResponse(w, CheckTokenResponse{
+			UserId:    passwordReset.UserID,
+			Token:     passwordReset.Token,
+			ExpiresAt: passwordReset.ExpiresAt,
+		}, http.StatusOK)
+	}
+}
+
+// ResetPassword Принимает запрос на внесение нового пароля в базу данных
+func (handler *AuthHandler) ResetPassword() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body, err := request.HandelBody[ResetPasswordRequest](w, r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if body.NewPassword == "" || body.Token == "" {
+			http.Error(w, "Token and password required", http.StatusBadRequest)
+			return
+		}
+
+		updatedUser, err := handler.AuthService.ResetPassword(body.Token, body.NewPassword)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		res.JsonResponse(w, ResetPasswordResponse{
+			UserId:    updatedUser.ID,
+			UpdatedAt: updatedUser.UpdatedAt,
+		}, http.StatusOK)
 	}
 }

@@ -171,3 +171,55 @@ func EventParticipantModelInit(db *gorm.DB, logger logger.LoggerInterface, event
 
 	return nil
 }
+
+func PasswordResetModelInit(db *gorm.DB, logger logger.LoggerInterface) error {
+	//проверка существования таблицы, если нет то создаем
+	count, err := checkTable[models.PasswordReset](db)
+	if err != nil {
+		return err
+	}
+
+	var passwordReset []*models.PasswordReset
+	if count == 0 {
+		passwordReset = []*models.PasswordReset{
+			{
+				UserID:    2,
+				Token:     "testToken",
+				Used:      false,
+				ExpiresAt: time.Now().Add(15 * time.Minute),
+			},
+		}
+
+		if result := db.Create(passwordReset); result.Error != nil {
+			return result.Error
+		}
+		logger.Info("Table password_resets created")
+	} else {
+		logger.Info("Table password_resets has records already")
+	}
+	return nil
+}
+
+func PreviousPasswordModelInit(db *gorm.DB, log logger.LoggerInterface) error {
+	// checkTable проверяет, существует ли таблица и возвращает число записей
+	count, err := checkTable[secret.PreviousPassword](db)
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		initial := &secret.PreviousPassword{
+			SecretID:  1,
+			Password:  "testPassword",
+			CreatedAt: time.Now(),
+		}
+		result := db.Create(initial)
+		if result.Error != nil {
+			return result.Error
+		}
+		log.Info("Table previous_passwords created with initial record")
+	} else {
+		log.Info("Table previous_passwords already has records")
+	}
+	return nil
+}
