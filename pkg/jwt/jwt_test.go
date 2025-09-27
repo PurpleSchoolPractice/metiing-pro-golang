@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/joho/godotenv"
+	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -28,9 +29,7 @@ func TestGenerateTokenPair(t *testing.T) {
 		Email: email,
 	})
 
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	if tokenPair.AccessToken == "" {
 		t.Fatal("Access token is empty")
@@ -49,9 +48,7 @@ func TestParseAccessToken(t *testing.T) {
 		Email: email,
 	})
 
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	isValid, data := jwtService.ParseToken(tokenPair.AccessToken)
 
@@ -72,9 +69,7 @@ func TestParseRefreshToken(t *testing.T) {
 		Email: email,
 	})
 
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	isValid, data := jwtService.ParseRefreshToken(tokenPair.RefreshToken)
 
@@ -110,9 +105,7 @@ func TestRefreshTokenType(t *testing.T) {
 		Email: email,
 	})
 
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// Пытаемся использовать access token как refresh token
 	isValid, data := jwtService.ParseRefreshToken(tokenPair.AccessToken)
@@ -138,9 +131,7 @@ func TestTokenExpiration(t *testing.T) {
 		Email: email,
 	})
 
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// Проверяем, что токен сначала валиден
 	isValid, _ := jwtService.ParseToken(tokenPair.AccessToken)

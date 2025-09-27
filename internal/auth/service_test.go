@@ -53,17 +53,10 @@ func TestRegisterSuccess(t *testing.T) {
 	mockDB.ExpectCommit()
 
 	user, err := authService.Register("test@example.com", "Password123!", "testuser")
-	if err != nil {
-		t.Fatalf("Register error = %v", err)
-	}
-	if user.Email != "test@example.com" {
-		t.Fatalf("email = %s, want %s", user.Email, "test@example.com")
-	}
+	require.NoError(t, err)
+	require.Equal(t, "test@example.com", user.Email)
 
-	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestRegisterUserExists(t *testing.T) {
@@ -78,17 +71,11 @@ func TestRegisterUserExists(t *testing.T) {
 	_, err := authService.Register("test@example.com", "Password123!", "testuser")
 
 	// Проверка, что получили ожидаемую ошибку
-	if err == nil {
-		t.Fatal("Expected error for existing user, got nil")
-	}
-	if err.Error() != auth.ErrUserExists {
-		t.Fatalf("Expected error message %s, got %s", auth.ErrUserExists, err.Error())
-	}
+	require.Error(t, err)
+	require.Equal(t, auth.ErrUserExists, err.Error())
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestLoginSuccess(t *testing.T) {
@@ -104,17 +91,13 @@ func TestLoginSuccess(t *testing.T) {
 			AddRow(1, "test@example.com", string(hashedPassword), "testuser"))
 
 	email, err := authService.Login("test@example.com", "Password123!")
-	if err != nil {
-		t.Fatalf("Login error = %v", err)
-	}
+	require.NoError(t, err)
 	if email.Email != "test@example.com" {
 		t.Fatalf("email = %s, want %s", email.Email, "test@example.com")
 	}
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestLoginWrongPassword(t *testing.T) {
@@ -140,9 +123,7 @@ func TestLoginWrongPassword(t *testing.T) {
 	}
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestLoginUserNotFound(t *testing.T) {
@@ -164,9 +145,7 @@ func TestLoginUserNotFound(t *testing.T) {
 	}
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestRefreshTokensSuccess(t *testing.T) {
@@ -196,9 +175,7 @@ func TestRefreshTokensSuccess(t *testing.T) {
 	}
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestRefreshTokensInvalidToken(t *testing.T) {
@@ -217,9 +194,7 @@ func TestRefreshTokensInvalidToken(t *testing.T) {
 	}
 
 	// Не должно быть обращений к БД
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestRefreshTokensUserNotFound(t *testing.T) {
@@ -247,9 +222,7 @@ func TestRefreshTokensUserNotFound(t *testing.T) {
 	}
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestForgotPasswordSuccess(t *testing.T) {
@@ -277,9 +250,7 @@ func TestForgotPasswordSuccess(t *testing.T) {
 	}
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestForgotPasswordUserNotExists(t *testing.T) {
@@ -299,14 +270,11 @@ func TestForgotPasswordUserNotExists(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error for not existing user, got nil")
 	}
-	if err.Error() != auth.ErrUserNotFound {
-		t.Errorf("ожидали ошибку %q, получили %q", auth.ErrUserNotFound, err)
-	}
+
+	require.Equal(t, auth.ErrUserNotFound, err.Error())
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestForgotPasswordErrorCreatingPassword(t *testing.T) {
@@ -329,17 +297,12 @@ func TestForgotPasswordErrorCreatingPassword(t *testing.T) {
 	config := &configs.Config{}
 
 	err := authService.ForgotPassword(config, email)
-	if err == nil {
-		t.Fatal("Expected error for password reset creation, got nil")
-	}
-	if err.Error() != auth.ErrCreatePasswordReset {
-		t.Errorf("ожидали ошибку %q, получили %q", auth.ErrCreatePasswordReset, err)
-	}
+	require.NoError(t, err)
+
+	require.Equal(t, auth.ErrCreatePasswordReset, err.Error())
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestResetPasswordSuccess(t *testing.T) {
