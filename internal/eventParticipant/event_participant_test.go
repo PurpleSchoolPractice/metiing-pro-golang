@@ -71,9 +71,7 @@ func TestGetUserEvents(t *testing.T) {
 	t.Cleanup(cleanup)
 	fixedTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	date, err := time.Parse("2006-01-02", "2025-05-09")
-	if err != nil {
-		t.Fatalf("Not possible to parse date: %v", err)
-	}
+	require.NoError(t, err)
 
 	// Мокаем запрос на получение событий пользователя
 	mock.ExpectQuery(`SELECT events.* FROM "events" JOIN event_participants ON events.id = event_participants.event_id WHERE event_participants.user_id = $1`).

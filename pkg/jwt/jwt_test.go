@@ -52,13 +52,9 @@ func TestParseAccessToken(t *testing.T) {
 
 	isValid, data := jwtService.ParseToken(tokenPair.AccessToken)
 
-	if !isValid {
-		t.Fatal("Access token is not valid")
-	}
+	require.True(t, isValid)
+	require.Equal(t, email, data.Email)
 
-	if data.Email != email {
-		t.Fatalf("Email %s != %s", data.Email, email)
-	}
 }
 
 func TestParseRefreshToken(t *testing.T) {
@@ -73,13 +69,8 @@ func TestParseRefreshToken(t *testing.T) {
 
 	isValid, data := jwtService.ParseRefreshToken(tokenPair.RefreshToken)
 
-	if !isValid {
-		t.Fatal("Refresh token is not valid")
-	}
-
-	if data.Email != email {
-		t.Fatalf("Email %s != %s", data.Email, email)
-	}
+	require.True(t, isValid)
+	require.Equal(t, email, data.Email)
 }
 
 func TestInvalidAccessToken(t *testing.T) {
@@ -87,13 +78,8 @@ func TestInvalidAccessToken(t *testing.T) {
 
 	isValid, data := jwtService.ParseToken("invalid.token.format")
 
-	if isValid {
-		t.Fatal("Invalid token should not be valid")
-	}
-
-	if data != nil {
-		t.Fatal("Data should be nil for invalid token")
-	}
+	require.False(t, isValid)
+	require.Nil(t, data)
 }
 
 func TestRefreshTokenType(t *testing.T) {

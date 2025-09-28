@@ -92,9 +92,7 @@ func TestLoginSuccess(t *testing.T) {
 
 	email, err := authService.Login("test@example.com", "Password123!")
 	require.NoError(t, err)
-	if email.Email != "test@example.com" {
-		t.Fatalf("email = %s, want %s", email.Email, "test@example.com")
-	}
+	require.Equal(t, "test@example.com", email.Email)
 
 	// Проверяем, что все ожидания были выполнены
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -115,12 +113,8 @@ func TestLoginWrongPassword(t *testing.T) {
 	_, err := authService.Login("test@example.com", "WrongPassword123!")
 
 	// Проверка, что получили ожидаемую ошибку
-	if err == nil {
-		t.Fatal("Expected error for wrong password, got nil")
-	}
-	if err.Error() != auth.ErrWrongCredentials {
-		t.Fatalf("Expected error message %s, got %s", auth.ErrWrongCredentials, err.Error())
-	}
+	require.Error(t, err)
+	require.Equal(t, auth.ErrWrongCredentials, err.Error())
 
 	// Проверяем, что все ожидания были выполнены
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -137,12 +131,8 @@ func TestLoginUserNotFound(t *testing.T) {
 	_, err := authService.Login("nonexistent@example.com", "Password123!")
 
 	// Проверка, что получили ожидаемую ошибку
-	if err == nil {
-		t.Fatal("Expected error for nonexistent user, got nil")
-	}
-	if err.Error() != auth.ErrWrongCredentials {
-		t.Fatalf("Expected error message %s, got %s", auth.ErrWrongCredentials, err.Error())
-	}
+	require.Error(t, err)
+	require.Equal(t, auth.ErrWrongCredentials, err.Error())
 
 	// Проверяем, что все ожидания были выполнены
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -164,15 +154,10 @@ func TestRefreshTokensSuccess(t *testing.T) {
 
 	// Вызываем метод обновления токенов
 	newTokenPair, err := authService.RefreshTokens(tokenPair.AccessToken, tokenPair.RefreshToken)
-	if err != nil {
-		t.Fatalf("RefreshTokens error = %v", err)
-	}
-	if newTokenPair.AccessToken == "" {
-		t.Fatal("AccessToken is empty")
-	}
-	if newTokenPair.RefreshToken == "" {
-		t.Fatal("RefreshToken is empty")
-	}
+
+	require.NoError(t, err)
+	require.NotEmpty(t, newTokenPair.AccessToken)
+	require.NotEmpty(t, newTokenPair.RefreshToken)
 
 	// Проверяем, что все ожидания были выполнены
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -186,12 +171,9 @@ func TestRefreshTokensInvalidToken(t *testing.T) {
 	_, err := authService.RefreshTokens("invalid.access.token", "invalid.refresh.token")
 
 	// Проверка, что получили ожидаемую ошибку
-	if err == nil {
-		t.Fatal("Expected error for invalid refresh token, got nil")
-	}
-	if err.Error() != auth.ErrInvalidRefreshToken {
-		t.Fatalf("Expected error message %s, got %s", auth.ErrInvalidRefreshToken, err.Error())
-	}
+
+	require.Error(t, err)
+	require.Equal(t, auth.ErrInvalidRefreshToken, err.Error())
 
 	// Не должно быть обращений к БД
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -214,12 +196,8 @@ func TestRefreshTokensUserNotFound(t *testing.T) {
 	_, err := authService.RefreshTokens(tokenPair.AccessToken, tokenPair.RefreshToken)
 
 	// Проверка, что получили ожидаемую ошибку
-	if err == nil {
-		t.Fatal("Expected error for user not found, got nil")
-	}
-	if err.Error() != auth.ErrUserNotFound {
-		t.Fatalf("Expected error message %s, got %s", auth.ErrUserNotFound, err.Error())
-	}
+	require.Error(t, err)
+	require.Equal(t, auth.ErrUserNotFound, err.Error())
 
 	// Проверяем, что все ожидания были выполнены
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -245,9 +223,7 @@ func TestForgotPasswordSuccess(t *testing.T) {
 	config := &configs.Config{}
 
 	err := authService.ForgotPassword(config, email)
-	if err != nil {
-		t.Fatalf("ForgotPassword error = %v", err)
-	}
+	require.NoError(t, err)
 
 	// Проверяем, что все ожидания были выполнены
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -267,9 +243,7 @@ func TestForgotPasswordUserNotExists(t *testing.T) {
 	config := &configs.Config{}
 
 	err := authService.ForgotPassword(config, email)
-	if err == nil {
-		t.Fatalf("expected error for not existing user, got nil")
-	}
+	require.Error(t, err)
 
 	require.Equal(t, auth.ErrUserNotFound, err.Error())
 
