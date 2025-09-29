@@ -81,7 +81,7 @@ func TestRegisterHandlerSuccess(t *testing.T) {
 	handler.Register()(w, req)
 
 	// Проверка результата
-	require.Equal(t, w.Code, http.StatusOK, w.Body.String())
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
 
 	// Проверка структуры ответа
 	var response auth.RegisterResponse

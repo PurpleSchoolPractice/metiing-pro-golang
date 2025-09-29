@@ -72,7 +72,7 @@ func TestRegisterUserExists(t *testing.T) {
 
 	// Проверка, что получили ожидаемую ошибку
 	require.Error(t, err)
-	require.Equal(t, auth.ErrUserExists, err.Error())
+	require.EqualError(t, err, auth.ErrUserExists)
 
 	// Проверяем, что все ожидания были выполнены
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -114,7 +114,7 @@ func TestLoginWrongPassword(t *testing.T) {
 
 	// Проверка, что получили ожидаемую ошибку
 	require.Error(t, err)
-	require.Equal(t, auth.ErrWrongCredentials, err.Error())
+	require.EqualError(t, err, auth.ErrWrongCredentials)
 
 	// Проверяем, что все ожидания были выполнены
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -132,7 +132,7 @@ func TestLoginUserNotFound(t *testing.T) {
 
 	// Проверка, что получили ожидаемую ошибку
 	require.Error(t, err)
-	require.Equal(t, auth.ErrWrongCredentials, err.Error())
+	require.EqualError(t, err, auth.ErrWrongCredentials)
 
 	// Проверяем, что все ожидания были выполнены
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -173,7 +173,7 @@ func TestRefreshTokensInvalidToken(t *testing.T) {
 	// Проверка, что получили ожидаемую ошибку
 
 	require.Error(t, err)
-	require.Equal(t, auth.ErrInvalidRefreshToken, err.Error())
+	require.EqualError(t, err, auth.ErrInvalidRefreshToken)
 
 	// Не должно быть обращений к БД
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -197,7 +197,7 @@ func TestRefreshTokensUserNotFound(t *testing.T) {
 
 	// Проверка, что получили ожидаемую ошибку
 	require.Error(t, err)
-	require.Equal(t, auth.ErrUserNotFound, err.Error())
+	require.EqualError(t, err, auth.ErrUserNotFound)
 
 	// Проверяем, что все ожидания были выполнены
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -245,7 +245,7 @@ func TestForgotPasswordUserNotExists(t *testing.T) {
 	err := authService.ForgotPassword(config, email)
 	require.Error(t, err)
 
-	require.Equal(t, auth.ErrUserNotFound, err.Error())
+	require.EqualError(t, err, auth.ErrUserNotFound)
 
 	// Проверяем, что все ожидания были выполнены
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -273,7 +273,7 @@ func TestForgotPasswordErrorCreatingPassword(t *testing.T) {
 	err := authService.ForgotPassword(config, email)
 	require.NoError(t, err)
 
-	require.Equal(t, auth.ErrCreatePasswordReset, err.Error())
+	require.EqualError(t, err, auth.ErrCreatePasswordReset)
 
 	// Проверяем, что все ожидания были выполнены
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -435,7 +435,7 @@ func TestResetPasswordInvalidToken(t *testing.T) {
 	updatedUser, err := authService.ResetPassword(token, "NewPassword1!")
 	require.Error(t, err)
 	require.Nil(t, updatedUser)
-	require.Contains(t, err.Error(), "Token Expired")
+	require.ErrorContains(t, err, "Token Expired")
 
 	require.NoError(t, mockDB.ExpectationsWereMet())
 }
@@ -479,7 +479,7 @@ func TestResetPasswordInvalidNewPassword(t *testing.T) {
 	updatedUser, err := authService.ResetPassword(token, "short")
 	require.Error(t, err)
 	require.Nil(t, updatedUser)
-	require.Contains(t, err.Error(), "The password must contain 12 characters including numbers and special characters.") // или конкретное сообщение об ошибке
+	require.ErrorContains(t, err, "The password must contain 12 characters including numbers and special characters.") // или конкретное сообщение об ошибке
 
 	require.NoError(t, mockDB.ExpectationsWereMet())
 }
@@ -536,7 +536,7 @@ func TestResetPasswordUserUpdateError(t *testing.T) {
 	updatedUser, err := authService.ResetPassword(token, "TestPassword1!")
 	require.Error(t, err)
 	require.Nil(t, updatedUser)
-	require.Contains(t, err.Error(), "database error")
+	require.ErrorContains(t, err, "database error")
 
 	require.NoError(t, mockDB.ExpectationsWereMet())
 }
@@ -661,7 +661,7 @@ func TestResetPasswordSecretUpdateError(t *testing.T) {
 	updatedUser, err := authService.ResetPassword(token, "TestPassword1!")
 	require.Error(t, err)
 	require.Nil(t, updatedUser)
-	require.Contains(t, err.Error(), "update error")
+	require.ErrorContains(t, err, "update error")
 
 	require.NoError(t, mockDB.ExpectationsWereMet())
 }
