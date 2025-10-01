@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -77,38 +76,21 @@ func TestRegisterHandlerSuccess(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(http.MethodPost, "/auth/register", reader)
 	req.Header.Set("Content-Type", "application/json")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	require.NoError(t, err)
 
 	handler.Register()(w, req)
 
 	// Проверка результата
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
-		t.Errorf("Response body: %s", w.Body.String())
-		return
-	}
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
 
 	// Проверка структуры ответа
 	var response auth.RegisterResponse
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
-		t.Fatalf("Failed to unmarshal response: %v", err)
-	}
 
-	if response.AccessToken == "" {
-		t.Error("AccessToken is empty")
-	}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
+	require.NotEmpty(t, response.AccessToken)
+	require.NotEmpty(t, response.RefreshToken)
+	require.NoError(t, mockDB.ExpectationsWereMet())
 
-	if response.RefreshToken == "" {
-		t.Error("RefreshToken is empty")
-	}
-
-	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
 }
 
 func TestRegisterHandlerUserExists(t *testing.T) {
@@ -132,23 +114,14 @@ func TestRegisterHandlerUserExists(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(http.MethodPost, "/auth/register", reader)
 	req.Header.Set("Content-Type", "application/json")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	require.NoError(t, err)
 
 	handler.Register()(w, req)
 
 	// Проверка результата - ожидаем ошибку
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("Expected status code %d, got %d", http.StatusUnauthorized, w.Code)
-		return
-	}
+	require.Equal(t, http.StatusUnauthorized, w.Code)
+	require.NoError(t, mockDB.ExpectationsWereMet())
 
-	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
 }
 
 func TestLoginHandlerSuccess(t *testing.T) {
@@ -174,38 +147,19 @@ func TestLoginHandlerSuccess(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(http.MethodPost, "/auth/login", reader)
 	req.Header.Set("Content-Type", "application/json")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	require.NoError(t, err)
 
 	handler.Login()(w, req)
 
-	// Проверка результата
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
-		t.Errorf("Response body: %s", w.Body.String())
-		return
-	}
+	require.Equal(t, http.StatusOK, w.Code, "Response body: %s", w.Body.String())
 
 	// Проверка структуры ответа
 	var response auth.LoginResponse
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
-		t.Fatalf("Failed to unmarshal response: %v", err)
-	}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response), "Failed to unmarshal response: %v", err)
+	require.NotEmpty(t, response.AccessToken, "AccessToken is empty")
+	require.NotEmpty(t, response.RefreshToken, "RefreshToken is empty")
 
-	if response.AccessToken == "" {
-		t.Error("AccessToken is empty")
-	}
-
-	if response.RefreshToken == "" {
-		t.Error("RefreshToken is empty")
-	}
-
-	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestLoginHandlerWrongCredentials(t *testing.T) {
@@ -231,23 +185,14 @@ func TestLoginHandlerWrongCredentials(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(http.MethodPost, "/auth/login", reader)
 	req.Header.Set("Content-Type", "application/json")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+
+	require.NoError(t, err)
 
 	handler.Login()(w, req)
 
-	// Проверка результата - ожидаем ошибку
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("Expected status code %d, got %d", http.StatusUnauthorized, w.Code)
-		return
-	}
+	require.Equal(t, http.StatusUnauthorized, w.Code, "Response body: %s", w.Body.String())
 
-	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestRefreshTokenHandlerSuccess(t *testing.T) {
@@ -274,38 +219,19 @@ func TestRefreshTokenHandlerSuccess(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(http.MethodPost, "/auth/refresh", reader)
 	req.Header.Set("Content-Type", "application/json")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	require.NoError(t, err)
 
 	handler.RefreshToken()(w, req)
 
-	// Проверка результата
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
-		t.Errorf("Response body: %s", w.Body.String())
-		return
-	}
+	require.Equal(t, http.StatusOK, w.Code, "Response body: %s", w.Body.String())
 
 	// Проверка структуры ответа
 	var response auth.RefreshTokenResponse
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
-		t.Fatalf("Failed to unmarshal response: %v", err)
-	}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response), "Failed to unmarshal response: %v", err)
+	require.NotEmpty(t, response.AccessToken, "AccessToken is empty")
+	require.NotEmpty(t, response.RefreshToken, "RefreshToken is empty")
 
-	if response.AccessToken == "" {
-		t.Error("AccessToken is empty")
-	}
-
-	if response.RefreshToken == "" {
-		t.Error("RefreshToken is empty")
-	}
-
-	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestRefreshTokenHandlerInvalidToken(t *testing.T) {
@@ -322,23 +248,12 @@ func TestRefreshTokenHandlerInvalidToken(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(http.MethodPost, "/auth/refresh", reader)
 	req.Header.Set("Content-Type", "application/json")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	require.NoError(t, err)
 
 	handler.RefreshToken()(w, req)
 
-	// Проверка результата - ожидаем ошибку авторизации
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("Expected status code %d, got %d", http.StatusUnauthorized, w.Code)
-		return
-	}
-
-	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.Equal(t, http.StatusUnauthorized, w.Code, "Response body: %s", w.Body.String())
+	require.NoError(t, mockDB.ExpectationsWereMet(), "Unfulfilled expectations: %s")
 }
 
 func TestInvalidJsonBody(t *testing.T) {
@@ -353,18 +268,11 @@ func TestInvalidJsonBody(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(http.MethodPost, "/auth/login", reader)
 	req.Header.Set("Content-Type", "application/json")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	require.NoError(t, err)
 
 	handler.Login()(w, req)
 
-	// Ожидаем ошибку обработки JSON
-	if w.Code == http.StatusOK {
-		t.Errorf("Expected non-OK status code, got %d", w.Code)
-		return
-	}
+	require.NotEqual(t, http.StatusOK, w.Code, "Response body: %s", w.Body.String())
 }
 
 func TestForgotPasswordHandlerSuccess(t *testing.T) {
@@ -389,9 +297,7 @@ func TestForgotPasswordHandlerSuccess(t *testing.T) {
 	// Подготовка запроса
 	data, _ := json.Marshal(&auth.ForgotPasswordRequest{Email: email})
 	req, err := http.NewRequest(http.MethodPost, "/auth/forgot-password", bytes.NewReader(data))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
 
 	// Выполнение запроса
@@ -399,19 +305,11 @@ func TestForgotPasswordHandlerSuccess(t *testing.T) {
 	handler.ForgotPassword()(w, req)
 
 	// Проверка результата
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
-		t.Errorf("Response body: %s", w.Body.String())
-	}
-
-	if !strings.Contains(w.Body.String(), "reset your password") {
-		t.Errorf("Unexpected response: %s", w.Body.String())
-	}
+	require.Equal(t, http.StatusOK, w.Code, "Response body: %s", w.Body.String())
+	require.Contains(t, w.Body.String(), "reset your password", "Unexpected response: %s", w.Body.String())
 
 	// Проверяем, что все ожидания выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet(), "Unfulfilled expectations: %s")
 }
 
 func TestForgotPasswordHandlerUserNotFound(t *testing.T) {
@@ -433,17 +331,11 @@ func TestForgotPasswordHandlerUserNotFound(t *testing.T) {
 
 	handler.ForgotPassword()(w, req)
 
-	if w.Code != http.StatusInternalServerError {
-		t.Errorf("Expected status %d, got %d", http.StatusInternalServerError, w.Code)
-	}
+	require.Equal(t, http.StatusInternalServerError, w.Code, "Expected status %d, got %d", http.StatusInternalServerError, w.Code)
 
-	if !strings.Contains(w.Body.String(), "User not found") {
-		t.Errorf("Unexpected response: %s", w.Body.String())
-	}
+	require.Contains(t, w.Body.String(), "User not found")
 
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet(), "Unfulfilled expectations: %s")
 }
 
 func TestForgotPasswordHandlerDBInsertError(t *testing.T) {
@@ -472,17 +364,11 @@ func TestForgotPasswordHandlerDBInsertError(t *testing.T) {
 
 	handler.ForgotPassword()(w, req)
 
-	if w.Code != http.StatusInternalServerError {
-		t.Errorf("Expected status %d, got %d", http.StatusInternalServerError, w.Code)
-	}
+	require.Equal(t, http.StatusInternalServerError, w.Code, "Expected status %d, got %d", http.StatusInternalServerError, w.Code)
 
-	if !strings.Contains(w.Body.String(), "Failed to create password reset") {
-		t.Errorf("Unexpected response: %s", w.Body.String())
-	}
+	require.Contains(t, w.Body.String(), "Failed to create password reset")
 
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet(), "Unfulfilled expectations: %s")
 }
 
 func TestForgotPasswordHandlerInvalidJSON(t *testing.T) {
@@ -495,9 +381,7 @@ func TestForgotPasswordHandlerInvalidJSON(t *testing.T) {
 
 	handler.ForgotPassword()(w, req)
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Expected status %d, got %d", http.StatusBadRequest, w.Code)
-	}
+	require.Equal(t, http.StatusInternalServerError, w.Code, "Expected status %d, got %d", http.StatusBadRequest, w.Code)
 }
 
 func TestCheckTokenExpirationDateSuccess(t *testing.T) {
@@ -733,27 +617,17 @@ func TestResetPasswordHandlerSuccess(t *testing.T) {
 	w := httptest.NewRecorder()
 	handler.ResetPassword()(w, req)
 
-	// Проверка результата
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
-		t.Errorf("Response body: %s", w.Body.String())
-	}
+	require.Equal(t, http.StatusOK, w.Code)
 
 	// Проверяем JSON ответ
 	var response auth.ResetPasswordResponse
 	err := json.Unmarshal(w.Body.Bytes(), &response)
-	if err != nil {
-		t.Errorf("Failed to unmarshal response: %v", err)
-	}
+	require.NoError(t, err, "Failed to unmarshal response: %v", err)
 
-	if response.UserId != userId {
-		t.Errorf("Expected user ID %d, got %d", userId, response.UserId)
-	}
+	require.Equal(t, userId, response.UserId)
 
 	// Проверяем, что все ожидания выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet(), "Unfulfilled expectations: %s")
 }
 
 func TestResetPasswordHandlerInvalidToken(t *testing.T) {
@@ -784,12 +658,8 @@ func TestResetPasswordHandlerInvalidToken(t *testing.T) {
 	handler.ResetPassword()(w, req)
 
 	// Проверка результата - должна быть ошибка
-	if w.Code != http.StatusInternalServerError {
-		t.Errorf("Expected status %d, got %d", http.StatusInternalServerError, w.Code)
-	}
+	require.Equal(t, http.StatusInternalServerError, w.Code, "Expected status %d, got %d", http.StatusInternalServerError, w.Code)
 
 	// Проверяем, что все ожидания выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet(), "Unfulfilled expectations: %s")
 }

@@ -25,9 +25,7 @@ func TestCreateEvent(t *testing.T) {
 	repo := NewEventRepository(dbWrapper)
 	repo.DataBase.DB = repo.DataBase.DB.Model(&models.Event{}) // Установка модели таблицы
 	date, err := time.Parse("2006-01-02 15:04", "2025-05-09 11:02")
-	if err != nil {
-		t.Fatalf("Not possible to parse date: %v", err)
-	}
+	require.NoError(t, err)
 
 	newEvent := models.NewEvent("testevent", "description", 30, 1, date)
 	createdEvent, err := repo.Create(newEvent)
@@ -41,9 +39,7 @@ func TestFindEventByID(t *testing.T) {
 	t.Cleanup(cleanup)
 	fixedTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	date, err := time.Parse("2006-01-02", "2025-05-09")
-	if err != nil {
-		t.Fatalf("Not possible to parse date: %v", err)
-	}
+	require.NoError(t, err)
 	rows := sqlmock.NewRows([]string{
 		"id",
 		"created_at",
@@ -77,9 +73,7 @@ func TestFindByCreatorID(t *testing.T) {
 	t.Cleanup(cleanup)
 	fixedTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	date, err := time.Parse("2006-01-02", "2025-05-09")
-	if err != nil {
-		t.Fatalf("Not possible to parse date: %v", err)
-	}
+	require.NoError(t, err)
 	rows := sqlmock.NewRows([]string{
 		"id",
 		"created_at",
@@ -117,9 +111,7 @@ func TestUpdateEvent(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 	date, err := time.Parse("2006-01-02 15:01", "2025-05-10 11:02")
-	if err != nil {
-		t.Fatalf("Not possible to parse date: %v", err)
-	}
+	require.NoError(t, err)
 
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventRepository(dbWrapper)
@@ -158,9 +150,7 @@ func TestGetEventWithCreator(t *testing.T) {
 	defer t.Cleanup(cleanup)
 	fixedTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	date, err := time.Parse("2006-01-02", "2025-05-09")
-	if err != nil {
-		t.Fatalf("Not possible to parse date: %v", err)
-	}
+	require.NoError(t, err)
 
 	// Мокаем запрос на получение события
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "events" WHERE id = $1`)).

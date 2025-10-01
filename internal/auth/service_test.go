@@ -53,17 +53,10 @@ func TestRegisterSuccess(t *testing.T) {
 	mockDB.ExpectCommit()
 
 	user, err := authService.Register("test@example.com", "Password123!", "testuser")
-	if err != nil {
-		t.Fatalf("Register error = %v", err)
-	}
-	if user.Email != "test@example.com" {
-		t.Fatalf("email = %s, want %s", user.Email, "test@example.com")
-	}
+	require.NoError(t, err)
+	require.Equal(t, "test@example.com", user.Email)
 
-	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestRegisterUserExists(t *testing.T) {
@@ -78,17 +71,11 @@ func TestRegisterUserExists(t *testing.T) {
 	_, err := authService.Register("test@example.com", "Password123!", "testuser")
 
 	// Проверка, что получили ожидаемую ошибку
-	if err == nil {
-		t.Fatal("Expected error for existing user, got nil")
-	}
-	if err.Error() != auth.ErrUserExists {
-		t.Fatalf("Expected error message %s, got %s", auth.ErrUserExists, err.Error())
-	}
+	require.Error(t, err)
+	require.EqualError(t, err, auth.ErrUserExists)
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestLoginSuccess(t *testing.T) {
@@ -104,17 +91,11 @@ func TestLoginSuccess(t *testing.T) {
 			AddRow(1, "test@example.com", string(hashedPassword), "testuser"))
 
 	email, err := authService.Login("test@example.com", "Password123!")
-	if err != nil {
-		t.Fatalf("Login error = %v", err)
-	}
-	if email.Email != "test@example.com" {
-		t.Fatalf("email = %s, want %s", email.Email, "test@example.com")
-	}
+	require.NoError(t, err)
+	require.Equal(t, "test@example.com", email.Email)
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestLoginWrongPassword(t *testing.T) {
@@ -132,17 +113,11 @@ func TestLoginWrongPassword(t *testing.T) {
 	_, err := authService.Login("test@example.com", "WrongPassword123!")
 
 	// Проверка, что получили ожидаемую ошибку
-	if err == nil {
-		t.Fatal("Expected error for wrong password, got nil")
-	}
-	if err.Error() != auth.ErrWrongCredentials {
-		t.Fatalf("Expected error message %s, got %s", auth.ErrWrongCredentials, err.Error())
-	}
+	require.Error(t, err)
+	require.EqualError(t, err, auth.ErrWrongCredentials)
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestLoginUserNotFound(t *testing.T) {
@@ -156,17 +131,11 @@ func TestLoginUserNotFound(t *testing.T) {
 	_, err := authService.Login("nonexistent@example.com", "Password123!")
 
 	// Проверка, что получили ожидаемую ошибку
-	if err == nil {
-		t.Fatal("Expected error for nonexistent user, got nil")
-	}
-	if err.Error() != auth.ErrWrongCredentials {
-		t.Fatalf("Expected error message %s, got %s", auth.ErrWrongCredentials, err.Error())
-	}
+	require.Error(t, err)
+	require.EqualError(t, err, auth.ErrWrongCredentials)
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestRefreshTokensSuccess(t *testing.T) {
@@ -185,20 +154,13 @@ func TestRefreshTokensSuccess(t *testing.T) {
 
 	// Вызываем метод обновления токенов
 	newTokenPair, err := authService.RefreshTokens(tokenPair.AccessToken, tokenPair.RefreshToken)
-	if err != nil {
-		t.Fatalf("RefreshTokens error = %v", err)
-	}
-	if newTokenPair.AccessToken == "" {
-		t.Fatal("AccessToken is empty")
-	}
-	if newTokenPair.RefreshToken == "" {
-		t.Fatal("RefreshToken is empty")
-	}
+
+	require.NoError(t, err)
+	require.NotEmpty(t, newTokenPair.AccessToken)
+	require.NotEmpty(t, newTokenPair.RefreshToken)
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestRefreshTokensInvalidToken(t *testing.T) {
@@ -209,17 +171,12 @@ func TestRefreshTokensInvalidToken(t *testing.T) {
 	_, err := authService.RefreshTokens("invalid.access.token", "invalid.refresh.token")
 
 	// Проверка, что получили ожидаемую ошибку
-	if err == nil {
-		t.Fatal("Expected error for invalid refresh token, got nil")
-	}
-	if err.Error() != auth.ErrInvalidRefreshToken {
-		t.Fatalf("Expected error message %s, got %s", auth.ErrInvalidRefreshToken, err.Error())
-	}
+
+	require.Error(t, err)
+	require.EqualError(t, err, auth.ErrInvalidRefreshToken)
 
 	// Не должно быть обращений к БД
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestRefreshTokensUserNotFound(t *testing.T) {
@@ -239,17 +196,11 @@ func TestRefreshTokensUserNotFound(t *testing.T) {
 	_, err := authService.RefreshTokens(tokenPair.AccessToken, tokenPair.RefreshToken)
 
 	// Проверка, что получили ожидаемую ошибку
-	if err == nil {
-		t.Fatal("Expected error for user not found, got nil")
-	}
-	if err.Error() != auth.ErrUserNotFound {
-		t.Fatalf("Expected error message %s, got %s", auth.ErrUserNotFound, err.Error())
-	}
+	require.Error(t, err)
+	require.EqualError(t, err, auth.ErrUserNotFound)
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestForgotPasswordSuccess(t *testing.T) {
@@ -272,14 +223,10 @@ func TestForgotPasswordSuccess(t *testing.T) {
 	config := &configs.Config{}
 
 	err := authService.ForgotPassword(config, email)
-	if err != nil {
-		t.Fatalf("ForgotPassword error = %v", err)
-	}
+	require.NoError(t, err)
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestForgotPasswordUserNotExists(t *testing.T) {
@@ -296,17 +243,12 @@ func TestForgotPasswordUserNotExists(t *testing.T) {
 	config := &configs.Config{}
 
 	err := authService.ForgotPassword(config, email)
-	if err == nil {
-		t.Fatalf("expected error for not existing user, got nil")
-	}
-	if err.Error() != auth.ErrUserNotFound {
-		t.Errorf("ожидали ошибку %q, получили %q", auth.ErrUserNotFound, err)
-	}
+	require.Error(t, err)
+
+	require.EqualError(t, err, auth.ErrUserNotFound)
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestForgotPasswordErrorCreatingPassword(t *testing.T) {
@@ -329,17 +271,12 @@ func TestForgotPasswordErrorCreatingPassword(t *testing.T) {
 	config := &configs.Config{}
 
 	err := authService.ForgotPassword(config, email)
-	if err == nil {
-		t.Fatal("Expected error for password reset creation, got nil")
-	}
-	if err.Error() != auth.ErrCreatePasswordReset {
-		t.Errorf("ожидали ошибку %q, получили %q", auth.ErrCreatePasswordReset, err)
-	}
+	require.NoError(t, err)
+
+	require.EqualError(t, err, auth.ErrCreatePasswordReset)
 
 	// Проверяем, что все ожидания были выполнены
-	if err := mockDB.ExpectationsWereMet(); err != nil {
-		t.Errorf("Unfulfilled expectations: %s", err)
-	}
+	require.NoError(t, mockDB.ExpectationsWereMet())
 }
 
 func TestResetPasswordSuccess(t *testing.T) {
@@ -498,7 +435,7 @@ func TestResetPasswordInvalidToken(t *testing.T) {
 	updatedUser, err := authService.ResetPassword(token, "NewPassword1!")
 	require.Error(t, err)
 	require.Nil(t, updatedUser)
-	require.Contains(t, err.Error(), "Token Expired")
+	require.ErrorContains(t, err, "Token Expired")
 
 	require.NoError(t, mockDB.ExpectationsWereMet())
 }
@@ -542,7 +479,7 @@ func TestResetPasswordInvalidNewPassword(t *testing.T) {
 	updatedUser, err := authService.ResetPassword(token, "short")
 	require.Error(t, err)
 	require.Nil(t, updatedUser)
-	require.Contains(t, err.Error(), "The password must contain 12 characters including numbers and special characters.") // или конкретное сообщение об ошибке
+	require.ErrorContains(t, err, "The password must contain 12 characters including numbers and special characters.") // или конкретное сообщение об ошибке
 
 	require.NoError(t, mockDB.ExpectationsWereMet())
 }
@@ -599,7 +536,7 @@ func TestResetPasswordUserUpdateError(t *testing.T) {
 	updatedUser, err := authService.ResetPassword(token, "TestPassword1!")
 	require.Error(t, err)
 	require.Nil(t, updatedUser)
-	require.Contains(t, err.Error(), "database error")
+	require.ErrorContains(t, err, "database error")
 
 	require.NoError(t, mockDB.ExpectationsWereMet())
 }
@@ -724,7 +661,7 @@ func TestResetPasswordSecretUpdateError(t *testing.T) {
 	updatedUser, err := authService.ResetPassword(token, "TestPassword1!")
 	require.Error(t, err)
 	require.Nil(t, updatedUser)
-	require.Contains(t, err.Error(), "update error")
+	require.ErrorContains(t, err, "update error")
 
 	require.NoError(t, mockDB.ExpectationsWereMet())
 }

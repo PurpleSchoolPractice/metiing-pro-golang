@@ -1,12 +1,13 @@
 package secret_test
 
 import (
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/logger"
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/secret"
 	"regexp"
 	"testing"
 	"time"
+
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/logger"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/secret"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
@@ -55,7 +56,7 @@ func TestCreateSecret(t *testing.T) {
 
 		_, err := repo.Create("short", 1)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "не менее 12 символов")
+		require.ErrorContains(t, err, "не менее 12 символов")
 	})
 }
 
@@ -152,7 +153,7 @@ func TestUpdateSecret(t *testing.T) {
 
 		_, err := repo.Update(1, "OldPassword123!")
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "должен отличаться")
+		require.ErrorContains(t, err, "должен отличаться")
 	})
 }
 
