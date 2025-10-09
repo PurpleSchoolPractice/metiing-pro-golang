@@ -10,28 +10,49 @@ import (
 )
 
 var testCases = []struct {
+	name        string
 	context     context.Context
 	expected    any
-	expectError bool
+	expectError error
 }{
-	{context: context.WithValue(context.Background(), middleware.ContextUserIDKey, uint(42)), expected: uint(42), expectError: false},
-	{context: context.WithValue(context.Background(), middleware.ContextUserIDKey, int(42)), expected: uint(0), expectError: true},
-	{context: context.WithValue(context.Background(), middleware.ContextUserIDKey, nil), expected: uint(0), expectError: true},
-	{context: context.WithValue(context.Background(), middleware.ContextUserIDKey, "42"), expected: uint(0), expectError: true},
-	{context: context.WithValue(context.Background(), middleware.ContextUserIDKey, struct{}{}), expected: uint(0), expectError: true},
+	{
+		name:        "Valid uint user ID",
+		context:     context.WithValue(context.Background(), middleware.ContextUserIDKey, uint(42)),
+		expected:    uint(42),
+		expectError: nil,
+	},
+	{
+		name:        "User ID wrong type int",
+		context:     context.WithValue(context.Background(), middleware.ContextUserIDKey, int(42)),
+		expected:    uint(0),
+		expectError: event.EventErrors["type"],
+	},
+	{
+		name:        "User ID missing",
+		context:     context.WithValue(context.Background(), middleware.ContextUserIDKey, nil),
+		expected:    uint(0),
+		expectError: event.EventErrors["missing"],
+	},
+	{
+		name:        "User ID wrong type string",
+		context:     context.WithValue(context.Background(), middleware.ContextUserIDKey, "42"),
+		expected:    uint(0),
+		expectError: event.EventErrors["type"],
+	},
+	{
+		name:        "User ID wrong type struct",
+		context:     context.WithValue(context.Background(), middleware.ContextUserIDKey, struct{}{}),
+		expected:    uint(0),
+		expectError: event.EventErrors["type"],
+	},
 }
 
 func TestGetUserIDFromContext(t *testing.T) {
 	for _, testData := range testCases {
-		t.Run("GetUserIDFromContext", func(t *testing.T) {
+		t.Run(testData.name, func(t *testing.T) {
 			res, err := event.GetUserIDFromContext(testData.context)
-			if testData.expectError {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
+			require.ErrorIs(t, err, testData.expectError)
 			require.Equal(t, testData.expected, res)
 		})
 	}
-
 }
