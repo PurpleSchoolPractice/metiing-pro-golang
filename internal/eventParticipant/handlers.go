@@ -52,7 +52,20 @@ func (h *EventParticipantHandler) AddEventParticipant() http.HandlerFunc {
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
-		userID := event.GetUserIDFromContext(r.Context())
+		userID, err := event.GetUserIDFromContext(r.Context())
+		if err != nil {
+			switch err {
+			case event.EventErrors["missing"]:
+				http.Error(w, "user id not found in context", http.StatusUnauthorized)
+				return
+			case event.EventErrors["type"]:
+				http.Error(w, "user id has invalid type", http.StatusInternalServerError)
+				return
+			default:
+				http.Error(w, "internal error", http.StatusInternalServerError)
+				return
+			}
+		}
 		log.Printf(
 			"AddEvent: ctxUserID=%d, req.EventID=%d, req.UserID=%d",
 			userID, req.EventID, req.UserID,
@@ -89,11 +102,24 @@ func (h *EventParticipantHandler) DeleteEventParticipant() http.HandlerFunc {
 		eventParam := chi.URLParam(r, "event_id")
 		eventID, err := strconv.ParseUint(eventParam, 10, 64)
 		if err != nil {
-			http.Error(w, "Invalid event ID", http.StatusBadRequest)
-			return
+			switch err {
+			case event.EventErrors["missing"]:
+				http.Error(w, "user id not found in context", http.StatusUnauthorized)
+				return
+			case event.EventErrors["type"]:
+				http.Error(w, "user id has invalid type", http.StatusInternalServerError)
+				return
+			default:
+				http.Error(w, "internal error", http.StatusInternalServerError)
+				return
+			}
 		}
 
-		userID := event.GetUserIDFromContext(r.Context())
+		userID, err := event.GetUserIDFromContext(r.Context())
+		if err != nil {
+			http.Error(w, "Error getting user ID from context", http.StatusInternalServerError)
+			return
+		}
 		isCreator, err := h.EventParticipantRepository.IsEventCreatorById(uint(eventID), userID)
 		if err != nil {
 			http.Error(w, "Error checking if user is creator of event", http.StatusInternalServerError)
