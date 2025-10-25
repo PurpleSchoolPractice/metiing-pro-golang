@@ -17,10 +17,10 @@ func Validate[T any](payload T) error {
 func ValidateTime(date string) (time.Time, error) {
 	layout := "2006-01-02 15:04"
 	var zeroTime time.Time
-	time, err := time.Parse(layout, date)
+	parseTime, err := time.Parse(layout, date)
 	if err != nil {
 		return zeroTime, errors.New("wrong time in request. Format time shoud be 2006-01-02 15:04")
 	}
 
-	return time, nil
+	return parseTime, nil
 }
