@@ -19,7 +19,7 @@ func ValidateTime(date string) (time.Time, error) {
 	var zeroTime time.Time
 	parseTime, err := time.Parse(layout, date)
 	if err != nil {
-		return zeroTime, errors.New("wrong time in request. Format time shoud be 2006-01-02 15:04")
+		return zeroTime, errors.New("wrong time in request. Format time should be 2006-01-02 15:04")
 	}
 
 	return parseTime, nil
