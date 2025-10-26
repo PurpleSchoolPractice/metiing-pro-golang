@@ -1,38 +1,67 @@
-package request
+package request_test
 
 import (
 	"testing"
+
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/request"
+	"github.com/stretchr/testify/require"
 )
 
 type validateTimeCase struct {
-	name      string
-	input     string
-	wantError bool
-	allowZero bool
+	name           string
+	input          string
+	expectError    bool
+	expectZeroTime bool
 }
 
-var validateTimeTests = []validateTimeCase{
-	{"valid date", "2025-10-31 14:30", false, false},
-	{"invalid format", "25-10-2025 14:30", true, true},
-	{"invalid date values", "2025-13-32 14:30", true, false},
-	{"boundary min date", "0001-01-01 00:00", false, false},
-	{"boundary max date", "9999-12-31 23:59", false, false},
+var testCases = []validateTimeCase{
+	{
+		name:           "valid date",
+		input:          "2025-10-31 14:30",
+		expectError:    false,
+		expectZeroTime: false,
+	},
+	{
+		name:           "invalid format",
+		input:          "25-10-2025 14:30",
+		expectError:    true,
+		expectZeroTime: true,
+	},
+	{
+		name:           "invalid date values",
+		input:          "2025-13-32 14:30",
+		expectError:    true,
+		expectZeroTime: true,
+	},
+	{
+		name:           "boundary min date",
+		input:          "0001-01-01 00:00",
+		expectError:    false,
+		expectZeroTime: true,
+	},
+	{
+		name:           "boundary max date",
+		input:          "9999-12-31 23:59",
+		expectError:    false,
+		expectZeroTime: false,
+	},
 }
 
 func TestValidateTime(t *testing.T) {
-	for _, tt := range validateTimeTests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := ValidateTime(tt.input)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := request.ValidateTime(tc.input)
 
-			if tt.wantError {
-				if err == nil {
-					t.Errorf("ожидалась ошибка, но err == nil для %q", tt.input)
-				}
+			if tc.expectError {
+				require.Error(t, err, "ожидалась ошибка, но err == nil для %q", tc.input)
+			} else {
+				require.NoError(t, err, "не ожидалась ошибка, но err != nil для %q: %v", tc.input, err)
 			}
-			if tt.allowZero {
-				if !got.IsZero() {
-					t.Errorf("ожидалось zeroTime, а получено: %v", got)
-				}
+
+			if tc.expectZeroTime {
+				require.True(t, got.IsZero(), "ожидалось zeroTime, а получено: %v", got)
+			} else {
+				require.False(t, got.IsZero(), "не ожидалось zeroTime, но получили zeroTime для %q", tc.input)
 			}
 		})
 	}
