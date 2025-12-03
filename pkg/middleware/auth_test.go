@@ -38,5 +38,32 @@ func TestIsAuthed(t *testing.T) {
 }
 
 func TestIsAuthedNegative(t *testing.T) {
+	testCases := []struct {
+		name   string
+		header string
+		status int
+	}{
+		{name: "No header", header: "", status: 401},
+		{name: "Wrong prefix", header: "Token xxx", status: 401},
+		{name: "Crash token", header: "Bearer invalid", status: 401},
+	}
 
+	newJWT := jwt.NewJWT("secret")
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("дошли до хендлера — а не должны были!")
+	})
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "http://example.com/", nil)
+			if tc.header != "" {
+				req.Header.Set("Authorization", tc.header)
+			}
+			rr := httptest.NewRecorder()
+			middleware.IsAuthed(next, newJWT).ServeHTTP(rr, req)
+			if rr.Code != 401 {
+				t.Errorf("ожидали 401, получили %d", rr.Code)
+			}
+		})
+	}
 }
