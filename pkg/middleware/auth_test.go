@@ -29,12 +29,22 @@ func TestIsAuthed(t *testing.T) {
 	rr := httptest.NewRecorder()
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
+
+		value := r.Context().Value(middleware.ContextEmailKey)
+		emailKey := value.(string)
+		value = r.Context().Value(middleware.ContextUserIDKey)
+		userIDKey := value.(uint)
+
+		if emailKey != "test@example.com" || userIDKey != 42 {
+			t.Error("данные в контексте и в токене не совпадают")
+		}
 	})
 
 	middleware.IsAuthed(next, newJWT).ServeHTTP(rr, req)
 	if rr.Code != http.StatusOK {
 		t.Errorf("ожидали 200, получили %d", rr.Code)
 	}
+
 }
 
 func TestIsAuthedNegative(t *testing.T) {
