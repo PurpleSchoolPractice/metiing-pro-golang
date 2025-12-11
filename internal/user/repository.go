@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
@@ -45,14 +46,27 @@ func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 }
 
 // FindAllUsers находит всех пользователей в базе данных.
-func (repo *UserRepository) FindAllUsers() ([]models.User, error) {
-	repo.DataBase.DB = repo.DataBase.DB.Model(&models.User{})
-	var users []models.User
-	result := repo.DataBase.DB.Find(&users)
-	if result.Error != nil {
-		return nil, result.Error
+func (repo *UserRepository) FindAllUsers(limit, offset int, search string) ([]models.UserResponse, int64, error) {
+	result := repo.DataBase.DB.Model(&models.User{}).Where("deleted_at is null")
+
+	if search != "" {
+		search = strings.TrimSpace(search)
+		search = "%" + search + "%"
+		result = result.Where("username ILIKE ? OR email ILIKE ?", search, search)
 	}
-	return users, nil
+
+	var total int64
+	result.Count(&total)
+
+	result = result.Limit(limit).Offset(offset)
+
+	var users []models.UserResponse
+	selectedUsers := result.Omit("password", "deleted_at").Scan(&users)
+
+	if selectedUsers.Error != nil {
+		return nil, 0, selectedUsers.Error
+	}
+	return users, total, nil
 }
 
 // Update обновляет информацию о пользователе в базе данных.
