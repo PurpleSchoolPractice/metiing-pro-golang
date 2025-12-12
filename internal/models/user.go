@@ -29,6 +29,16 @@ func NewUser(email string, password string, name string) *User {
 	}
 }
 
+func ToUserResponse(u *User) *UserResponse {
+    return &UserResponse{
+        ID:        u.ID,
+        CreatedAt: u.CreatedAt,
+        UpdatedAt: u.UpdatedAt,
+        Username:  u.Username,
+        Email:     u.Email,
+    }
+}
+
 type UserRepository interface {
 	Create(user *User) (*User, error)
 	FindById(id uint) (*User, error)

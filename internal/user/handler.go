@@ -116,7 +116,10 @@ func (handler *UserHandler) GetUserByID() http.HandlerFunc {
 			http.Error(w, "User not found", http.StatusBadRequest)
 			return
 		}
-		res.JsonResponse(w, user, 200)
+
+		userResponse := models.ToUserResponse(user)
+
+		res.JsonResponse(w, userResponse, 200)
 	}
 }
 
@@ -167,7 +170,9 @@ func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 			return
 		}
 
-		res.JsonResponse(w, updatedUser, 200)
+		userResponse := models.ToUserResponse(updatedUser)
+
+		res.JsonResponse(w, userResponse, 200)
 	}
 }
 
