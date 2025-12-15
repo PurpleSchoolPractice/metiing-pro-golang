@@ -13,7 +13,12 @@ func JsonResponse(w http.ResponseWriter, data interface{}, statusCode int) {
 	err := json.NewEncoder(&buf).Encode(data)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("ошибка: не удалось преобразовать JSON"))
+
+		errorBody := map[string]string{
+			"error": "ошибка: не удалось преобразовать JSON",
+		}
+		b, _ := json.Marshal(errorBody)
+		w.Write(b)
 		return
 	}
 

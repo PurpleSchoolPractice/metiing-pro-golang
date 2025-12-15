@@ -21,7 +21,7 @@ func TestJsonResponse(t *testing.T) {
 
 	body := strings.TrimSpace(rec.Body.String())
 
-	expected := "ошибка: не удалось преобразовать JSON"
+	expected := `{"error":"ошибка: не удалось преобразовать JSON"}`
 
 	if body != expected {
 		t.Errorf("ожидали тело '%s', получили '%s'", expected, body)
