@@ -87,6 +87,7 @@ func (handler *UserHandler) GetAllUsers() http.HandlerFunc {
 
 		if allUsers == nil {
 			res.JsonResponse(w, "Users not found", http.StatusNotFound)
+			return
 		}
 
 		res.JsonResponse(w, UserPaginatedResponse{
