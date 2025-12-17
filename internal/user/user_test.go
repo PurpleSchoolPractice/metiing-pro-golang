@@ -65,20 +65,32 @@ func TestFindAllUsers(t *testing.T) {
 
 	// Используем фиксированное время
 	fixedTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	// Ожидаем COUNT(*)
+	countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+	mock.ExpectQuery(regexp.QuoteMeta(
+		`SELECT count(*) FROM "users" WHERE deleted_at is null`,
+	)).WillReturnRows(countRows)
+
 	// Ожидаем SELECT-запрос для получения всех пользователей.
-	rows := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "username", "password", "email"}).
-		AddRow(1, fixedTime, fixedTime, nil, "testuser", "password", "email@example.com")
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE "users"."deleted_at" IS NULL`)).
-		WillReturnRows(rows)
+	rows := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "username", "email"}).
+		AddRow(1, fixedTime, fixedTime, "testuser", "email@example.com")
+
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT "users"."id","users"."created_at","users"."updated_at","users"."username","users"."email" 
+	FROM "users" WHERE deleted_at is null AND "users"."deleted_at" IS NULL LIMIT $1`)).
+	WithArgs(20).WillReturnRows(rows)
 
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := user.NewUserRepository(dbWrapper)
-	users, err := repo.FindAllUsers()
-	require.NoError(t, err, "Error fetching users")
-	require.Len(t, users, 1)
-	require.Equal(t, users[0].Email, "email@example.com")
-	require.NoError(t, mock.ExpectationsWereMet())
 
+	users, total, err := repo.FindAllUsers(20, 0, "")
+
+	require.NoError(t, err, "Error fetching users")
+	require.Equal(t, int64(1), total)
+	require.Len(t, users, 1)
+	require.Equal(t, "email@example.com", users[0].Email)
+
+	require.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestUpdateUser(t *testing.T) {

@@ -2,6 +2,7 @@ package user
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/convert"
@@ -37,15 +38,64 @@ func NewUserHandler(mux *chi.Mux, deps UserHandlerDeps) {
 // получение всех пользователей
 func (handler *UserHandler) GetAllUsers() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		gotAllUsers, err := handler.UserRepository.FindAllUsers()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+
+		limit := 20
+		offset := 0
+
+		limitStr := r.URL.Query().Get("limit")
+		if limitStr != "" {
+			limitInt, err := strconv.Atoi(limitStr) 
+			if err != nil {
+				http.Error(w, "Invalid limit param", http.StatusBadRequest)
+				return
+			} 
+			limit = limitInt
+		}
+
+		offsetStr := r.URL.Query().Get("offset")
+		if offsetStr != "" {
+			offsetInt, err := strconv.Atoi(offsetStr) 
+			if err != nil {
+				http.Error(w, "Invalid offset param", http.StatusBadRequest)
+				return
+			} 
+			offset = offsetInt
+		}
+
+		search := r.URL.Query().Get("q")
+
+		if limit < 1 || limit > 100 {
+			http.Error(w, "Invalid limit param, max 100 value", http.StatusBadRequest)
 			return
 		}
-		if gotAllUsers == nil {
-			res.JsonResponse(w, "Users not found", http.StatusNotFound)
+
+		if offset < 0 {
+			http.Error(w, "Invalid offset param, min 0 value", http.StatusBadRequest)
+			return
 		}
-		res.JsonResponse(w, gotAllUsers, 200)
+
+		if len(search) > 200 {
+			http.Error(w, "Invalid search param, max 200 characters", http.StatusBadRequest)
+			return
+		}
+
+		allUsers, total, err := handler.UserRepository.FindAllUsers(limit, offset, search)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if allUsers == nil {
+			res.JsonResponse(w, "Users not found", http.StatusNotFound)
+			return
+		}
+
+		res.JsonResponse(w, UserPaginatedResponse{
+			Items: allUsers,
+			Total: total,
+			Limit: limit,
+			Offset: offset,
+		}, 200)
 	}
 }
 
@@ -67,7 +117,10 @@ func (handler *UserHandler) GetUserByID() http.HandlerFunc {
 			http.Error(w, "User not found", http.StatusBadRequest)
 			return
 		}
-		res.JsonResponse(w, user, 200)
+
+		userResponse := models.ToUserResponse(user)
+
+		res.JsonResponse(w, userResponse, 200)
 	}
 }
 
@@ -118,7 +171,9 @@ func (handler *UserHandler) UpdateDataUser() http.HandlerFunc {
 			return
 		}
 
-		res.JsonResponse(w, updatedUser, 200)
+		userResponse := models.ToUserResponse(updatedUser)
+
+		res.JsonResponse(w, userResponse, 200)
 	}
 }
 
