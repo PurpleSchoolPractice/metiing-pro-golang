@@ -9,6 +9,7 @@ import (
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/convert"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/event"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/jwt"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/middleware"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/request"
@@ -309,14 +310,22 @@ func (h *EventHandler) GetEventsWithCreators() http.HandlerFunc {
 // GetEventWithCreator Получает событие вместе с его создателем
 func (h *EventHandler) GetEventWithCreator() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := convert.ParseId(r, "id")
+		eventID, err := convert.ParseId(r, "id")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		eventWithCreator, err := h.EventRepository.GetEventWithCreator(id)
+
+		userID, err := event.GetUserIDFromContext(r.Context())
+		if err != nil {
+			http.Error(w, "Error getting user ID from context", http.StatusInternalServerError)
+			return
+		}
+
+		eventWithCreator, err := h.EventRepository.GetEventWithCreator(eventID, userID)
 		if err != nil {
 			http.Error(w, "Failed to fetch event with creator", http.StatusInternalServerError)
+			return
 		}
 		res.JsonResponse(w, eventWithCreator, http.StatusOK)
 

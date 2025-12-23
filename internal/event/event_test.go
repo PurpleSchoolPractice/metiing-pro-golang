@@ -153,8 +153,8 @@ func TestGetEventWithCreator(t *testing.T) {
 	require.NoError(t, err)
 
 	// Мокаем запрос на получение события
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "events" WHERE id = $1`)).
-		WithArgs(uint(1)).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "events" WHERE (id = $1 AND creator_id = $2) AND "events"."deleted_at" IS NULL ORDER BY "events"."id" LIMIT $3`)).
+		WithArgs(uint(1), uint(1), uint(1)).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "deleted_at", "title", "description", "event_date", "creator_id",
 		}).AddRow(1, fixedTime, fixedTime, nil, "testevent", "description", date, 1))
@@ -169,7 +169,7 @@ func TestGetEventWithCreator(t *testing.T) {
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := NewEventRepository(dbWrapper)
 	repo.DataBase.DB = repo.DataBase.DB.Model(&models.Event{}) // Установка модели таблицы
-	event, err := repo.GetEventWithCreator(uint(1))
+	event, err := repo.GetEventWithCreator(uint(1), uint(1))
 	require.NoError(t, err, "Error getting event with creator")
 	require.NotNil(t, event, "Event should not be nil")
 	require.Equal(t, uint(1), event.ID)
