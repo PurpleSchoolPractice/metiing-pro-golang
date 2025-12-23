@@ -1,6 +1,12 @@
 package eventParticipant
 
 import (
+	"bytes"
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"regexp"
 	"testing"
 	"time"
 
@@ -8,6 +14,9 @@ import (
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/db/mock"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/jwt"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/middleware"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/require"
 )
 
@@ -114,5 +123,60 @@ func TestIsParticipant(t *testing.T) {
 	isParticipant, err = repo.IsParticipant(uint(1), uint(2))
 	require.NoError(t, err, "Check participant failed")
 	require.False(t, isParticipant, "User should not be a participant")
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteEventParticipant(t *testing.T) {
+
+	//Тестовые данные
+	var testUserID, testParticipantID, testEvent uint
+	testUserID = 42
+	testParticipantID = 54
+	testEvent = 33
+	testEmail := "test@example.com"
+
+	//Создаем моковую базу данных с ожиданием выборки из events и удаления из таблицы event_participants
+	gormDB, mock, cleanup := mock.SetupMockDB(t)
+	t.Cleanup(cleanup)
+
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "events" WHERE (id = $1 AND creator_id = $2) AND "events"."deleted_at" IS NUL`)).
+		WithArgs(uint(testEvent), uint(testUserID)).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+
+	mock.ExpectBegin()
+
+	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "event_participants" SET "deleted_at"=$1 WHERE (event_id = $2 AND user_id = $3) AND "event_participants"."deleted_at" IS NULL`)).
+		WithArgs(sqlmock.AnyArg(), uint(testEvent), uint(testParticipantID)).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectCommit()
+	dbWrapper := &db.Db{DB: gormDB}
+	repo := NewEventParticipantRepository(dbWrapper)
+	repo.DataBase.DB = repo.DataBase.DB.Model(&models.EventParticipant{})
+
+	// Создаем jwt
+	newJWT := jwt.NewJWT("secret")
+
+	//Созданим обработчик на основании моковой базы и jwt
+	handler := &EventParticipantHandler{
+		EventParticipantRepository: repo,
+		JWTService:                 newJWT,
+	}
+
+	// Выполнение запроса
+	r := chi.NewRouter()
+	r.Delete("/event-participant/{id}/event/{event_id}", handler.DeleteEventParticipant())
+	reader := bytes.NewReader([]byte{})
+	w := httptest.NewRecorder()
+
+	deleteMetod := fmt.Sprintf("/event-participant/%d/event/%d", testParticipantID, testEvent)
+	req := httptest.NewRequest(http.MethodDelete, deleteMetod, reader)
+	ctx := context.WithValue(req.Context(), middleware.ContextEmailKey, testEmail)
+	ctx = context.WithValue(ctx, middleware.ContextUserIDKey, testUserID)
+	req = req.WithContext(ctx)
+
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, w.Code, 200)
 	require.NoError(t, mock.ExpectationsWereMet())
 }

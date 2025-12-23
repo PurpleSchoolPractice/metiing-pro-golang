@@ -31,7 +31,7 @@ func NewEventParticipantHandler(mux *chi.Mux, deps EventParticipantDepsHandler) 
 	}
 	mux.Handle("POST /event-participant/",
 		middleware.IsAuthed(handler.AddEventParticipant(), deps.JWTService))
-	mux.Handle("DELETE /event-participant/{id}",
+	mux.Handle("DELETE /event-participant/{id}/event/{event_id}",
 		middleware.IsAuthed(handler.DeleteEventParticipant(), deps.JWTService))
 	mux.Handle("GET /event-participant/{id}",
 		middleware.IsAuthed(handler.GetEventParticipantById(), deps.JWTService))
@@ -130,7 +130,7 @@ func (h *EventParticipantHandler) DeleteEventParticipant() http.HandlerFunc {
 			return
 		}
 
-		if err := h.EventParticipantRepository.RemoveParticipant(uint(participantID), uint(eventID)); err != nil {
+		if err := h.EventParticipantRepository.RemoveParticipant(uint(eventID), uint(participantID)); err != nil {
 			http.Error(w, "Failed to remove participant", http.StatusInternalServerError)
 			return
 		}
