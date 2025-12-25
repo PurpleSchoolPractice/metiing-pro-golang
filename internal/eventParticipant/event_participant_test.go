@@ -129,24 +129,23 @@ func TestIsParticipant(t *testing.T) {
 func TestDeleteEventParticipant(t *testing.T) {
 
 	//Тестовые данные
-	var testUserID, testParticipantID, testEvent uint
-	testUserID = 42
-	testParticipantID = 54
-	testEvent = 33
+	testUserID := uint(42)
+	testParticipantID := uint(54)
+	testEventID := uint(33)
 	testEmail := "test@example.com"
 
 	//Создаем моковую базу данных с ожиданием выборки из events и удаления из таблицы event_participants
 	gormDB, mock, cleanup := mock.SetupMockDB(t)
 	t.Cleanup(cleanup)
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "events" WHERE (id = $1 AND creator_id = $2) AND "events"."deleted_at" IS NUL`)).
-		WithArgs(uint(testEvent), uint(testUserID)).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "events" WHERE (id = $1 AND creator_id = $2) AND "events"."deleted_at" IS NULL`)).
+		WithArgs(testEventID, testUserID).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
 	mock.ExpectBegin()
 
 	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "event_participants" SET "deleted_at"=$1 WHERE (event_id = $2 AND user_id = $3) AND "event_participants"."deleted_at" IS NULL`)).
-		WithArgs(sqlmock.AnyArg(), uint(testEvent), uint(testParticipantID)).
+		WithArgs(sqlmock.AnyArg(), testEventID, testParticipantID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectCommit()
@@ -169,7 +168,7 @@ func TestDeleteEventParticipant(t *testing.T) {
 	reader := bytes.NewReader([]byte{})
 	w := httptest.NewRecorder()
 
-	deleteMetod := fmt.Sprintf("/event-participant/%d/event/%d", testParticipantID, testEvent)
+	deleteMetod := fmt.Sprintf("/event-participant/%d/event/%d", testParticipantID, testEventID)
 	req := httptest.NewRequest(http.MethodDelete, deleteMetod, reader)
 	ctx := context.WithValue(req.Context(), middleware.ContextEmailKey, testEmail)
 	ctx = context.WithValue(ctx, middleware.ContextUserIDKey, testUserID)
