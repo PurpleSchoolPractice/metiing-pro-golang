@@ -69,9 +69,11 @@ func (repo *EventRepository) DeleteById(id uint) error {
 }
 
 // GetEventWithCreator получает событие вместе с информацией о создателе
-func (repo *EventRepository) GetEventWithCreator(id uint) (*models.Event, error) {
+func (repo *EventRepository) GetEventWithCreator(eventID, userID uint) (*models.Event, error) {
 	var event models.Event
-	result := repo.DataBase.DB.Preload("Creator").Where("creator_id = ?", id).First(&event)
+
+	result := repo.DataBase.DB.Preload("Creator").Where("id = ? AND creator_id = ?", eventID, userID).First(&event)
+
 	if result.Error != nil {
 		return nil, result.Error
 	}

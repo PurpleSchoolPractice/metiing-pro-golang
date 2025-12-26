@@ -51,6 +51,6 @@ type EventRepository interface {
 	FindAllByCreatorId(id uint) ([]Event, error)
 	Update(event *Event) (*Event, error)
 	DeleteById(id uint) error
-	GetEventWithCreator(id uint) (*Event, error)
+	GetEventWithCreator(eventID, userID uint) (*Event, error)
 	GetEventsWithCreators() ([]Event, error)
 }
