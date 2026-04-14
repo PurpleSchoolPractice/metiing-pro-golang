@@ -109,11 +109,20 @@ func (repo *EventParticipantRepository) IsEventCreatorById(eventID, userID uint)
 }
 
 // получаем пользователей с приглашениями по событию
-func (repo EventParticipantRepository) GetUsersWithInvites(eventID uint) (*models.EventParticipant, error) {
-	var inviteUsers *models.EventParticipant
-	result := repo.DataBase.DB.Where("event_id = ?", eventID).Find(&inviteUsers)
+func (repo EventParticipantRepository) GetUsersWithInvites(eventID uint) ([]models.EventParticipant, error) {
+	var participants []models.EventParticipant
+
+	result := repo.DataBase.DB.
+		Where("event_id = ?", eventID).
+		Find(&participants)
+
 	if result.Error != nil {
 		return nil, result.Error
 	}
-	return inviteUsers, nil
+
+	if len(participants) == 0 {
+		return []models.EventParticipant{}, nil
+	}
+
+	return participants, nil
 }

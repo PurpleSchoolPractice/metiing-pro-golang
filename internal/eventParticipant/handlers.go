@@ -154,13 +154,17 @@ func (h *EventParticipantHandler) GetEventParticipantById() http.HandlerFunc {
 			http.Error(w, "Failed to get participants", http.StatusInternalServerError)
 			return
 		}
-		//Собираем ответ
-		usersInvite := models.UserStatus{
-			UserId: participants.UserID,
-			Status: participants.Status,
-		}
-		res.JsonResponse(w, usersInvite, http.StatusOK)
 
+		//Собираем ответ
+		var usersInvite []models.UserStatus
+		for _, p := range participants {
+			usersInvite = append(usersInvite, models.UserStatus{
+				UserId: p.UserID,
+				Status: p.Status,
+			})
+		}
+
+		res.JsonResponse(w, usersInvite, http.StatusOK)
 	}
 }
 
