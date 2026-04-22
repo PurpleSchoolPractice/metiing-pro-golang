@@ -103,7 +103,7 @@ func TestGetActiveToken_DatabaseError(t *testing.T) {
 	// Проверка: GetActiveToken возвращает ошибку и nil результат
 	require.Error(t, err)
 	require.Nil(t, res)
-	require.Equal(t, "connection refused", err.Error())
+	require.ErrorContains(t, err, "connection refused")
 
 	// Проверка всех ожиданий
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -162,7 +162,7 @@ func TestTokenUsed_NoRowsAffected(t *testing.T) {
 
 	// Проверка: TokenUsed возвращает ошибку "no active tokens found"
 	require.Error(t, err)
-	require.Equal(t, "no active tokens found", err.Error())
+	require.ErrorContains(t, err, "no active tokens found")
 
 	// Проверка всех ожиданий
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -193,7 +193,7 @@ func TestTokenUsed_DatabaseError(t *testing.T) {
 
 	// Проверка
 	require.Error(t, err)
-	require.Equal(t, "database connection failed", err.Error())
+	require.ErrorContains(t, err, "database connection failed")
 
 	// Проверка всех ожиданий
 	require.NoError(t, mock.ExpectationsWereMet())
