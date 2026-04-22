@@ -91,7 +91,7 @@ func (repo *UserRepository) Delete(user *models.User) error {
 	}
 	return nil
 }
-func (r *UserRepository) FindByid(id uint) (*models.User, error) {
+func (r *UserRepository) FindById(id uint) (*models.User, error) {
 	var u models.User
 	err := r.DataBase.
 		Session(&gorm.Session{NewDB: true}).
