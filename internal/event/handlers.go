@@ -23,7 +23,7 @@ const (
 )
 
 type EventHandler struct {
-	EventRepository  *EventRepository
+	EventRepository  models.EventRepository
 	UserRepository   *user.UserRepository
 	EventParticipant *eventParticipant.EventParticipantRepository
 	JWTService       *jwt.JWT
@@ -31,7 +31,7 @@ type EventHandler struct {
 }
 
 type EventHandlerDeps struct {
-	EventRepository  *EventRepository
+	EventRepository  models.EventRepository
 	UserRepository   *user.UserRepository
 	EventParticipant *eventParticipant.EventParticipantRepository
 	JWTService       *jwt.JWT
