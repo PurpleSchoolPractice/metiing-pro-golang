@@ -12,6 +12,7 @@ import (
 
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/middleware"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -19,6 +20,7 @@ type MockEventRepository struct {
 	FindByIdFunck  func(id uint) (*models.Event, error)
 	CreateFunc     func(event *models.Event) (*models.Event, error)
 	IsUserBusyFunc func(userID uint, start time.Time, duration int) bool
+	UpdateFunc     func(event *models.Event) (*models.Event, error)
 }
 
 func (m *MockEventRepository) FindById(id uint) (*models.Event, error) {
@@ -43,6 +45,9 @@ func (m *MockEventRepository) IsUserBusy(userID uint, start time.Time, duration 
 }
 
 func (m *MockEventRepository) Update(event *models.Event) (*models.Event, error) {
+	if m.UpdateFunc != nil {
+		return m.UpdateFunc(event)
+	}
 	return nil, nil
 }
 
@@ -93,8 +98,9 @@ func (m *MockUserRepository) DeleteById(id uint) error {
 }
 
 type MockEventParticipantRepository struct {
-	AddParticipantFunc    func(eventID, userID uint) error
-	UpdateParticipantFunc func(participant *models.EventParticipant) (*models.EventParticipant, error)
+	AddParticipantFunc       func(eventID, userID uint) error
+	UpdateParticipantFunc    func(participant *models.EventParticipant) (*models.EventParticipant, error)
+	GetEventParticipantsFunc func(eventID uint) ([]models.User, error)
 }
 
 func (m *MockEventParticipantRepository) AddParticipant(eventID, userID uint) error {
@@ -109,6 +115,9 @@ func (m *MockEventParticipantRepository) RemoveParticipant(eventID, userID uint)
 }
 
 func (m *MockEventParticipantRepository) GetEventParticipants(eventID uint) ([]models.User, error) {
+	if m.GetEventParticipantsFunc != nil {
+		return m.GetEventParticipantsFunc(eventID)
+	}
 	return nil, nil
 }
 
@@ -375,6 +384,184 @@ func TestCreateEventHandler(t *testing.T) {
 					t.Errorf("Ожидался 1 статус, получено %d", len(result.Status))
 				}
 
+			}
+
+		})
+	}
+}
+
+func TestUpdateHandler(t *testing.T) {
+	tests := []struct {
+		name                     string
+		eventId                  string
+		contextUserId            uint
+		requestBody              string
+		mockFindById             func(id uint) (*models.Event, error)
+		mockUpdate               func(event *models.Event) (*models.Event, error)
+		mockGetEventParticipants func(eventID uint) ([]models.User, error)
+		mockIsUserBusy           func(userID uint, start time.Time, duration int) bool
+		mockUpdateParticipant    func(participant *models.EventParticipant) (*models.EventParticipant, error)
+		expectedStatus           int
+	}{
+		{
+			name:           "нет авторизации",
+			contextUserId:  0,
+			eventId:        "1",
+			requestBody:    `{"title": "Update", "start_date": "2025-05-10 11:00", "duration": 60, "creator_id": 1}`,
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "неверный id события",
+			contextUserId:  1,
+			eventId:        "abc",
+			requestBody:    `{"title": "Update"}`,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:          "событие не найдено",
+			contextUserId: 1,
+			eventId:       "1",
+			requestBody:   `{"title": "Update", "start_date": "2025-05-10 11:00", "duration": 60, "creator_id": 1}`,
+			mockFindById: func(id uint) (*models.Event, error) {
+				return nil, errors.New("событие не найдено")
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:          "битый json",
+			contextUserId: 1,
+			eventId:       "1",
+			requestBody:   `{invalid json}`,
+			mockFindById: func(id uint) (*models.Event, error) {
+				return &models.Event{CreatorID: 1}, nil
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:          "невалидная дата",
+			contextUserId: 1,
+			eventId:       "1",
+			requestBody:   `{"title": "Update", "start_date": "invalid", "creator_id": 1, "duration": 60}`,
+			mockFindById: func(id uint) (*models.Event, error) {
+				return &models.Event{CreatorID: 1}, nil
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:          "пользователь не создатель",
+			contextUserId: 2,
+			eventId:       "1",
+			requestBody:   `{"title": "Update", "start_date": "2025-05-10 11:00", "duration": 60, "creator_id": 1}`,
+			mockFindById: func(id uint) (*models.Event, error) {
+				return &models.Event{CreatorID: 1}, nil
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:          "ошибка обновления в репо",
+			contextUserId: 1,
+			eventId:       "1",
+			requestBody:   `{"title": "Update", "start_date": "2025-05-10 11:00", "duration": 60, "creator_id": 1}`,
+			mockFindById: func(id uint) (*models.Event, error) {
+				return &models.Event{CreatorID: 1}, nil
+			},
+			mockUpdate: func(event *models.Event) (*models.Event, error) {
+				return nil, errors.New("ощибка БД")
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:          "ошибка получения участников",
+			contextUserId: 1,
+			eventId:       "1",
+			requestBody:   `{"title": "Update", "start_date": "2025-05-10 11:00", "duration": 60, "creator_id": 1}`,
+			mockFindById: func(id uint) (*models.Event, error) {
+				return &models.Event{CreatorID: 1}, nil
+			},
+			mockUpdate: func(event *models.Event) (*models.Event, error) {
+				return event, nil
+			},
+			mockGetEventParticipants: func(eventID uint) ([]models.User, error) {
+				return nil, errors.New("ошибка получения участников")
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:          "успех без участников",
+			contextUserId: 1,
+			eventId:       "1",
+			requestBody:   `{"title": "Update", "description": "Desc", "start_date": "2025-05-10 11:00", "duration": 60, "creator_id": 1}`,
+			mockFindById: func(id uint) (*models.Event, error) {
+				return &models.Event{CreatorID: 1, Title: "Old"}, nil
+			},
+			mockUpdate: func(event *models.Event) (*models.Event, error) {
+				event.Title = "Update"
+				return event, nil
+			},
+			mockGetEventParticipants: func(eventID uint) ([]models.User, error) {
+				return []models.User{}, nil
+			},
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockRepo := &MockEventRepository{
+				FindByIdFunck:  tt.mockFindById,
+				UpdateFunc:     tt.mockUpdate,
+				IsUserBusyFunc: tt.mockIsUserBusy,
+			}
+
+			mockParticipant := &MockEventParticipantRepository{
+				GetEventParticipantsFunc: tt.mockGetEventParticipants,
+				UpdateParticipantFunc:    tt.mockUpdateParticipant,
+			}
+
+			handler := &EventHandler{
+				EventRepository:  mockRepo,
+				UserRepository:   &MockUserRepository{},
+				EventParticipant: mockParticipant,
+				Config:           &configs.Config{},
+			}
+
+			req := httptest.NewRequest("PUT", "/event/"+tt.eventId, strings.NewReader(tt.requestBody))
+			req.Header.Set("Content-Type", "application/json")
+
+			// Добавляем userId в контекст только если он не 0 иначе принимает как валидное число и паникует
+			if tt.contextUserId != 0 {
+				ctx := context.WithValue(req.Context(), middleware.ContextUserIDKey, tt.contextUserId)
+				req = req.WithContext(ctx)
+			}
+
+			rctx := chi.NewRouteContext()
+			rctx.URLParams.Add("id", tt.eventId)
+			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+			rr := httptest.NewRecorder()
+
+			handler.UpdateEvent()(rr, req)
+
+			if rr.Code != tt.expectedStatus {
+				t.Errorf("Ожидался статус %d, получен %d. Body: %s",
+					tt.expectedStatus, rr.Code, rr.Body.String())
+			}
+
+			if tt.expectedStatus == http.StatusOK {
+				var res EventResponse
+
+				if err := json.Unmarshal(rr.Body.Bytes(), &res); err != nil {
+					t.Fatalf("Не удалось распарсить JSON: %v", err)
+				}
+
+				if res.Title != "Update" {
+					t.Errorf("Ожидался title 'Update', получен %q", res.Title)
+				}
+
+				if res.Duration != 60 {
+					t.Errorf("Ожидался duration 60, получен %d", res.Duration)
+				}
 			}
 
 		})
