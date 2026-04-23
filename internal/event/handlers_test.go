@@ -21,6 +21,7 @@ type MockEventRepository struct {
 	CreateFunc     func(event *models.Event) (*models.Event, error)
 	IsUserBusyFunc func(userID uint, start time.Time, duration int) bool
 	UpdateFunc     func(event *models.Event) (*models.Event, error)
+	DeleteByIdFunc func(id uint) error
 }
 
 func (m *MockEventRepository) FindById(id uint) (*models.Event, error) {
@@ -52,6 +53,9 @@ func (m *MockEventRepository) Update(event *models.Event) (*models.Event, error)
 }
 
 func (m *MockEventRepository) DeleteById(id uint) error {
+	if m.DeleteByIdFunc != nil {
+		return m.DeleteByIdFunc(id)
+	}
 	return nil
 }
 func (m *MockEventRepository) GetEventsWithCreators() ([]models.Event, error) {
@@ -561,6 +565,102 @@ func TestUpdateHandler(t *testing.T) {
 
 				if res.Duration != 60 {
 					t.Errorf("Ожидался duration 60, получен %d", res.Duration)
+				}
+			}
+
+		})
+	}
+}
+
+func TestDeleteEventHandler(t *testing.T) {
+	tests := []struct {
+		name           string
+		eventId        string
+		mockFindById   func(id uint) (*models.Event, error)
+		mockDeleteById func(id uint) error
+		expectedStatus int
+	}{
+		{
+			name:           "id отсутствует ",
+			eventId:        "",
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "id не число   ",
+			eventId:        "abc",
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:    " событие не найдено",
+			eventId: "1",
+			mockFindById: func(id uint) (*models.Event, error) {
+				return nil, errors.New("событий не найдено")
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:    "  ошибка удаления ",
+			eventId: "1",
+			mockFindById: func(id uint) (*models.Event, error) {
+				return &models.Event{CreatorID: 1, Title: "Test"}, nil
+			},
+			mockDeleteById: func(id uint) error {
+				return errors.New("ошибка БД")
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name:    "  Успешное удаление ",
+			eventId: "1",
+			mockFindById: func(id uint) (*models.Event, error) {
+				return &models.Event{CreatorID: 1, Title: "Test"}, nil
+			},
+			mockDeleteById: func(id uint) error {
+				return nil
+			},
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockRepo := &MockEventRepository{
+				FindByIdFunck:  tt.mockFindById,
+				DeleteByIdFunc: tt.mockDeleteById,
+			}
+
+			handler := &EventHandler{
+				EventRepository:  mockRepo,
+				UserRepository:   &MockUserRepository{},
+				EventParticipant: &MockEventParticipantRepository{},
+				Config:           &configs.Config{},
+			}
+
+			req := httptest.NewRequest("DELETE", "/event/"+tt.eventId, nil)
+
+			rctx := chi.NewRouteContext()
+			rctx.URLParams.Add("id", tt.eventId)
+			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+			rr := httptest.NewRecorder()
+
+			handler.DeleteEvent()(rr, req)
+
+			if rr.Code != tt.expectedStatus {
+				t.Errorf("Ожидался статус %d, получен %d. Body: %s",
+					tt.expectedStatus, rr.Code, rr.Body.String())
+			}
+
+			if tt.expectedStatus == http.StatusOK {
+				var res DeleteResponse
+
+				if err := json.Unmarshal(rr.Body.Bytes(), &res); err != nil {
+					t.Fatalf("Не удалось распарсить JSON: %v", err)
+				}
+
+				if res.Delete != true {
+					t.Errorf("Ожидалось delete: true, получено %v", res.Delete)
 				}
 			}
 
