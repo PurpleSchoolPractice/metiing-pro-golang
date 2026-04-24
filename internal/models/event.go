@@ -53,4 +53,5 @@ type EventRepository interface {
 	DeleteById(id uint) error
 	GetEventWithCreator(eventID, userID uint) (*Event, error)
 	GetEventsWithCreators() ([]Event, error)
+	IsUserBusy(userID uint, start time.Time, duration int) bool
 }

@@ -9,6 +9,7 @@ type EventParticipantRepository interface {
 	GetEventParticipants(eventID uint) ([]User, error)
 	GetUserEvents(userID uint) ([]Event, error)
 	IsParticipant(eventID, userID uint) (bool, error)
+	UpdateParticipant(participant *EventParticipant) (*EventParticipant, error)
 }
 
 // EventParticipant представляет связь "многие ко многим" между событиями и пользователями через внешний ключ

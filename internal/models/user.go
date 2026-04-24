@@ -14,11 +14,11 @@ type User struct {
 }
 
 type UserResponse struct {
-	ID        uint       `json:"id"`
-    CreatedAt time.Time  `json:"created_at"`
-    UpdatedAt time.Time  `json:"updated_at"`
-    Username  string     `json:"username"`
-    Email     string     `json:"email"`
+	ID        uint      `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Username  string    `json:"username"`
+	Email     string    `json:"email"`
 }
 
 func NewUser(email string, password string, name string) *User {
@@ -30,13 +30,13 @@ func NewUser(email string, password string, name string) *User {
 }
 
 func ToUserResponse(u *User) *UserResponse {
-    return &UserResponse{
-        ID:        u.ID,
-        CreatedAt: u.CreatedAt,
-        UpdatedAt: u.UpdatedAt,
-        Username:  u.Username,
-        Email:     u.Email,
-    }
+	return &UserResponse{
+		ID:        u.ID,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+		Username:  u.Username,
+		Email:     u.Email,
+	}
 }
 
 type UserRepository interface {

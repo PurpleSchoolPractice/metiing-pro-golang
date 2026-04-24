@@ -5,9 +5,7 @@ import (
 	"strconv"
 
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/configs"
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/eventParticipant"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/models"
-	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/user"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/convert"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/event"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/pkg/jwt"
@@ -23,17 +21,17 @@ const (
 )
 
 type EventHandler struct {
-	EventRepository  *EventRepository
-	UserRepository   *user.UserRepository
-	EventParticipant *eventParticipant.EventParticipantRepository
+	EventRepository  models.EventRepository
+	UserRepository   models.UserRepository
+	EventParticipant models.EventParticipantRepository
 	JWTService       *jwt.JWT
 	Config           *configs.Config
 }
 
 type EventHandlerDeps struct {
-	EventRepository  *EventRepository
-	UserRepository   *user.UserRepository
-	EventParticipant *eventParticipant.EventParticipantRepository
+	EventRepository  models.EventRepository
+	UserRepository   models.UserRepository
+	EventParticipant models.EventParticipantRepository
 	JWTService       *jwt.JWT
 	Config           *configs.Config
 }
@@ -108,7 +106,7 @@ func (h *EventHandler) CreateEvent() http.HandlerFunc {
 		var userStatusInvate []models.UserStatus
 		for _, invUser := range body.InvatedUsers {
 			//ищем имя пользователя для ответа по юзер ИД из запроса
-			foundUser, err := h.UserRepository.FindByid(invUser.UserId)
+			foundUser, err := h.UserRepository.FindById(invUser.UserId)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
