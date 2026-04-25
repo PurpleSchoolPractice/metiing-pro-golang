@@ -114,7 +114,7 @@ func TestLoginWrongPassword(t *testing.T) {
 
 	// Проверка, что получили ожидаемую ошибку
 	require.Error(t, err)
-	require.EqualError(t, err, auth.ErrWrongCredentials)
+	require.EqualError(t, err, auth.InValidPasOrEmail)
 
 	// Проверяем, что все ожидания были выполнены
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -132,7 +132,7 @@ func TestLoginUserNotFound(t *testing.T) {
 
 	// Проверка, что получили ожидаемую ошибку
 	require.Error(t, err)
-	require.EqualError(t, err, auth.ErrWrongCredentials)
+	require.EqualError(t, err, auth.InValidPasOrEmail)
 
 	// Проверяем, что все ожидания были выполнены
 	require.NoError(t, mockDB.ExpectationsWereMet())
@@ -271,7 +271,7 @@ func TestForgotPasswordErrorCreatingPassword(t *testing.T) {
 	config := &configs.Config{}
 
 	err := authService.ForgotPassword(config, email)
-	require.NoError(t, err)
+	require.Error(t, err)
 
 	require.EqualError(t, err, auth.ErrCreatePasswordReset)
 

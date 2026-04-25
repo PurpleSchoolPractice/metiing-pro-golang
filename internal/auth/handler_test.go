@@ -81,7 +81,7 @@ func TestRegisterHandlerSuccess(t *testing.T) {
 	handler.Register()(w, req)
 
 	// Проверка результата
-	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	require.Equal(t, http.StatusCreated, w.Code, w.Body.String())
 
 	// Проверка структуры ответа
 	var response auth.RegisterResponse
@@ -119,7 +119,7 @@ func TestRegisterHandlerUserExists(t *testing.T) {
 	handler.Register()(w, req)
 
 	// Проверка результата - ожидаем ошибку
-	require.Equal(t, http.StatusUnauthorized, w.Code)
+	require.Equal(t, http.StatusBadRequest, w.Code)
 	require.NoError(t, mockDB.ExpectationsWereMet())
 
 }
@@ -211,6 +211,7 @@ func TestRefreshTokenHandlerSuccess(t *testing.T) {
 
 	// Подготовка запроса
 	data, _ := json.Marshal(&auth.RefreshTokenRequest{
+		AccessToken:  "expired.or.invalid.access.token",
 		RefreshToken: tokenPair.RefreshToken,
 	})
 	reader := bytes.NewReader(data)
@@ -240,6 +241,7 @@ func TestRefreshTokenHandlerInvalidToken(t *testing.T) {
 
 	// Подготовка запроса с невалидным токеном
 	data, _ := json.Marshal(&auth.RefreshTokenRequest{
+		AccessToken:  "invalid.access.token",
 		RefreshToken: "invalid.refresh.token",
 	})
 	reader := bytes.NewReader(data)
@@ -381,7 +383,7 @@ func TestForgotPasswordHandlerInvalidJSON(t *testing.T) {
 
 	handler.ForgotPassword()(w, req)
 
-	require.Equal(t, http.StatusInternalServerError, w.Code, "Expected status %d, got %d", http.StatusBadRequest, w.Code)
+	require.Equal(t, http.StatusBadRequest, w.Code, "Expected status %d, got %d", http.StatusBadRequest, w.Code)
 }
 
 func TestCheckTokenExpirationDateSuccess(t *testing.T) {
