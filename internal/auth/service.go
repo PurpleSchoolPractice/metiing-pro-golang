@@ -88,9 +88,10 @@ func (service *AuthService) Login(email, password string) (jwt.JWTData, error) {
 // RefreshTokens - обновление токенов
 func (service *AuthService) RefreshTokens(refreshToken, accessToken string) (*jwt.TokenPair, error) {
 	accessTokenValid, _ := service.JWT.ParseToken(accessToken)
-	if accessTokenValid {
+	if !accessTokenValid {
 		return nil, errors.New(ErrAccessToken)
 	}
+
 	refreshTokenValid, data := service.JWT.ParseRefreshToken(refreshToken)
 	if !refreshTokenValid || data == nil {
 		return nil, errors.New(ErrInvalidRefreshToken)

@@ -145,15 +145,15 @@ func TestRefreshTokensSuccess(t *testing.T) {
 	// Создаем валидный refresh token
 	validEmail := "test@example.com"
 	jwtService := jwt.NewJWT("test-secret")
-	tokenPair, _ := jwtService.GenerateTokenPair(jwt.JWTData{Email: validEmail})
+	tokenPair, err := jwtService.GenerateTokenPair(jwt.JWTData{Email: validEmail})
+	require.NoError(t, err)
 
 	// Настройка ожиданий для БД
 	mockDB.ExpectQuery(`SELECT (.+) FROM "users" WHERE`).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "email", "password", "username"}).
 			AddRow(1, validEmail, "hashedpassword", "testuser"))
-
 	// Вызываем метод обновления токенов
-	newTokenPair, err := authService.RefreshTokens(tokenPair.AccessToken, tokenPair.RefreshToken)
+	newTokenPair, err := authService.RefreshTokens(tokenPair.RefreshToken, tokenPair.AccessToken)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, newTokenPair.AccessToken)
@@ -168,7 +168,12 @@ func TestRefreshTokensInvalidToken(t *testing.T) {
 	defer cleanup()
 
 	// Вызываем метод обновления токенов с невалидным токеном
-	_, err := authService.RefreshTokens("invalid.access.token", "invalid.refresh.token")
+	validEmail := "test@example.com"
+	jwtService := jwt.NewJWT("test-secret")
+	tokenPair, err := jwtService.GenerateTokenPair(jwt.JWTData{Email: validEmail})
+	require.NoError(t, err)
+
+	_, err = authService.RefreshTokens("invalid.refresh.token", tokenPair.AccessToken)
 
 	// Проверка, что получили ожидаемую ошибку
 
@@ -193,7 +198,7 @@ func TestRefreshTokensUserNotFound(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{}))
 
 	// Вызываем метод обновления токенов
-	_, err := authService.RefreshTokens(tokenPair.AccessToken, tokenPair.RefreshToken)
+	_, err := authService.RefreshTokens(tokenPair.RefreshToken, tokenPair.AccessToken)
 
 	// Проверка, что получили ожидаемую ошибку
 	require.Error(t, err)

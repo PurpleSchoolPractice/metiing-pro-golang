@@ -212,6 +212,7 @@ func TestRefreshTokenHandlerSuccess(t *testing.T) {
 	// Подготовка запроса
 	data, _ := json.Marshal(&auth.RefreshTokenRequest{
 		RefreshToken: tokenPair.RefreshToken,
+		AccessToken:  tokenPair.AccessToken,
 	})
 	reader := bytes.NewReader(data)
 
@@ -238,9 +239,10 @@ func TestRefreshTokenHandlerInvalidToken(t *testing.T) {
 	handler, mockDB, cleanup := setupAuthHandler(t)
 	defer cleanup()
 
-	// Подготовка запроса с невалидным токеном
+	// Подготовка запроса с невалидным токеном и добавление обязательного AccessToken
 	data, _ := json.Marshal(&auth.RefreshTokenRequest{
 		RefreshToken: "invalid.refresh.token",
+		AccessToken:  "valid.access.token",
 	})
 	reader := bytes.NewReader(data)
 
