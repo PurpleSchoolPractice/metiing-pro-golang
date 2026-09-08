@@ -139,7 +139,7 @@ func (service *AuthService) ResetPassword(token, newPassword string) (*models.Us
 	}
 
 	// Находим пользователя по ID из токена
-	user, err := service.UserRepository.FindByid(activeToken.UserID)
+	user, err := service.UserRepository.FindById(activeToken.UserID)
 	if err != nil {
 		return nil, err
 	}
