@@ -13,6 +13,8 @@ type UserRepository struct {
 	DataBase *db.Db
 }
 
+var _ models.UserRepository = (*UserRepository)(nil)
+
 // NewUserRepository создает новый экземпляр UserRepository с заданным объектом базы данных.
 func NewUserRepository(dataBase *db.Db) *UserRepository {
 	return &UserRepository{
@@ -82,15 +84,11 @@ func (repo *UserRepository) Update(user *models.User) (*models.User, error) {
 	return user, nil
 }
 
-// Delete удаляет пользователя из базы данных.
-func (repo *UserRepository) Delete(user *models.User) error {
-	repo.DataBase.DB = repo.DataBase.DB.Model(&models.User{})
-	result := repo.DataBase.DB.Delete(user)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
+// DeleteById удаляет пользователя из базы данных по идентификатору.
+func (repo *UserRepository) DeleteById(id uint) error {
+	return repo.DataBase.DB.Delete(&models.User{}, id).Error
 }
+
 func (r *UserRepository) FindById(id uint) (*models.User, error) {
 	var u models.User
 	err := r.DataBase.

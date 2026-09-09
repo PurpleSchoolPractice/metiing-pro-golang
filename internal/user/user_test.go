@@ -78,7 +78,7 @@ func TestFindAllUsers(t *testing.T) {
 
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT "users"."id","users"."created_at","users"."updated_at","users"."username","users"."email" 
 	FROM "users" WHERE deleted_at is null AND "users"."deleted_at" IS NULL LIMIT $1`)).
-	WithArgs(20).WillReturnRows(rows)
+		WithArgs(20).WillReturnRows(rows)
 
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := user.NewUserRepository(dbWrapper)
@@ -130,13 +130,7 @@ func TestDeleteUser(t *testing.T) {
 
 	dbWrapper := &db.Db{DB: gormDB}
 	repo := user.NewUserRepository(dbWrapper)
-	userToDelete := &models.User{
-		Model:    gorm.Model{ID: 1},
-		Username: "testuser",
-		Password: "password",
-		Email:    "email@example.com",
-	}
-	err := repo.Delete(userToDelete)
+	err := repo.DeleteById(1)
 	require.NoError(t, err, "Error deleting user")
 	require.NoError(t, mock.ExpectationsWereMet())
 }

@@ -44,21 +44,21 @@ func (handler *UserHandler) GetAllUsers() http.HandlerFunc {
 
 		limitStr := r.URL.Query().Get("limit")
 		if limitStr != "" {
-			limitInt, err := strconv.Atoi(limitStr) 
+			limitInt, err := strconv.Atoi(limitStr)
 			if err != nil {
 				http.Error(w, "Invalid limit param", http.StatusBadRequest)
 				return
-			} 
+			}
 			limit = limitInt
 		}
 
 		offsetStr := r.URL.Query().Get("offset")
 		if offsetStr != "" {
-			offsetInt, err := strconv.Atoi(offsetStr) 
+			offsetInt, err := strconv.Atoi(offsetStr)
 			if err != nil {
 				http.Error(w, "Invalid offset param", http.StatusBadRequest)
 				return
-			} 
+			}
 			offset = offsetInt
 		}
 
@@ -91,9 +91,9 @@ func (handler *UserHandler) GetAllUsers() http.HandlerFunc {
 		}
 
 		res.JsonResponse(w, UserPaginatedResponse{
-			Items: allUsers,
-			Total: total,
-			Limit: limit,
+			Items:  allUsers,
+			Total:  total,
+			Limit:  limit,
 			Offset: offset,
 		}, 200)
 	}
@@ -108,7 +108,7 @@ func (handler *UserHandler) GetUserByID() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		user, err := handler.UserRepository.FindByid(id)
+		user, err := handler.UserRepository.FindById(id)
 		if err != nil {
 			http.Error(w, "Failed search user by id", http.StatusBadRequest)
 			return
@@ -183,15 +183,12 @@ func (handler *UserHandler) DeleteUser() http.HandlerFunc {
 		id, err := convert.ParseId(r, "id")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
-		user := &models.User{
-			Model: gorm.Model{
-				ID: id,
-			},
-		}
-		err = handler.UserRepository.Delete(user)
+		err = handler.UserRepository.DeleteById(id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 		res.JsonResponse(w, "User deleted", 200)
 	}
