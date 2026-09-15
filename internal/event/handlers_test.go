@@ -129,6 +129,14 @@ func (m *MockEventParticipantRepository) GetUserEvents(userID uint) ([]models.Ev
 	return nil, nil
 }
 
+func (m *MockEventParticipantRepository) GetUsersWithInvites(eventID uint) ([]models.EventParticipant, error) {
+	return nil, nil
+}
+
+func (m *MockEventParticipantRepository) IsEventCreatorById(eventID, userID uint) (bool, error) {
+	return false, nil
+}
+
 func (m *MockEventParticipantRepository) IsParticipant(eventID, userID uint) (bool, error) {
 	return false, nil
 }

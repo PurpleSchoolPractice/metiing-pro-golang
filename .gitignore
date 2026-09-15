@@ -2,3 +2,10 @@
 .env
 .yml
 
+.DS_Store
+*.exe
+*.test
+*.out
+/bin/
+/dist/
+/meeting

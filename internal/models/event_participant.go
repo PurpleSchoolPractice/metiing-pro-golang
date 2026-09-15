@@ -4,8 +4,10 @@ import "gorm.io/gorm"
 
 // EventParticipantRepository определяет интерфейс для работы с участниками событий
 type EventParticipantRepository interface {
+	IsEventCreatorById(eventID, userID uint) (bool, error)
 	AddParticipant(eventID, userID uint) error
 	RemoveParticipant(eventID, userID uint) error
+	GetUsersWithInvites(eventID uint) ([]EventParticipant, error)
 	GetEventParticipants(eventID uint) ([]User, error)
 	GetUserEvents(userID uint) ([]Event, error)
 	IsParticipant(eventID, userID uint) (bool, error)
