@@ -15,12 +15,12 @@ import (
 )
 
 type EventParticipantHandler struct {
-	EventParticipantRepository *EventParticipantRepository
+	EventParticipantRepository models.EventParticipantRepository
 	JWTService                 *jwt.JWT
 }
 
 type EventParticipantDepsHandler struct {
-	EventParticipantRepository *EventParticipantRepository
+	EventParticipantRepository models.EventParticipantRepository
 	JWTService                 *jwt.JWT
 }
 
@@ -29,16 +29,31 @@ func NewEventParticipantHandler(mux *chi.Mux, deps EventParticipantDepsHandler) 
 		EventParticipantRepository: deps.EventParticipantRepository,
 		JWTService:                 deps.JWTService,
 	}
-	mux.Handle("POST /event-participant/",
-		middleware.IsAuthed(handler.AddEventParticipant(), deps.JWTService))
-	mux.Handle("DELETE /event-participant/{id}/event/{event_id}",
-		middleware.IsAuthed(handler.DeleteEventParticipant(), deps.JWTService))
-	mux.Handle("GET /event-participant/{id}",
-		middleware.IsAuthed(handler.GetEventParticipantById(), deps.JWTService))
-	mux.Handle("GET /event-participant/user/{user_id}/events",
-		middleware.IsAuthed(handler.GetUserEvents(), deps.JWTService))
-	mux.Handle("POST /event-participant/is-participant",
-		middleware.IsAuthed(handler.IsParticipant(), deps.JWTService))
+
+	mux.Handle(
+		"POST /event-participant/",
+		middleware.IsAuthed(handler.AddEventParticipant(), deps.JWTService),
+	)
+
+	mux.Handle(
+		"DELETE /event-participant/{id}/event/{event_id}",
+		middleware.IsAuthed(handler.DeleteEventParticipant(), deps.JWTService),
+	)
+
+	mux.Handle(
+		"GET /event-participant/{id}",
+		middleware.IsAuthed(handler.GetEventParticipantById(), deps.JWTService),
+	)
+
+	mux.Handle(
+		"GET /event-participant/user/{user_id}/events",
+		middleware.IsAuthed(handler.GetUserEvents(), deps.JWTService),
+	)
+
+	mux.Handle(
+		"POST /event-participant/is-participant",
+		middleware.IsAuthed(handler.IsParticipant(), deps.JWTService),
+	)
 }
 
 // AddEventParticipant Добавляет нового участника в событие
@@ -48,40 +63,79 @@ func (h *EventParticipantHandler) AddEventParticipant() http.HandlerFunc {
 			EventID uint `json:"event_id"`
 			UserID  uint `json:"user_id"`
 		}
+
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
+
 		userID, err := event.GetUserIDFromContext(r.Context())
 		if err != nil {
 			switch err {
 			case event.EventErrors["missing"]:
-				http.Error(w, "user id not found in context", http.StatusUnauthorized)
+				http.Error(
+					w,
+					"user id not found in context",
+					http.StatusUnauthorized,
+				)
 				return
+
 			case event.EventErrors["type"]:
-				http.Error(w, "user id has invalid type", http.StatusInternalServerError)
+				http.Error(
+					w,
+					"user id has invalid type",
+					http.StatusInternalServerError,
+				)
 				return
+
 			default:
-				http.Error(w, "internal error", http.StatusInternalServerError)
+				http.Error(
+					w,
+					"internal error",
+					http.StatusInternalServerError,
+				)
 				return
 			}
 		}
+
 		log.Printf(
 			"AddEvent: ctxUserID=%d, req.EventID=%d, req.UserID=%d",
-			userID, req.EventID, req.UserID,
+			userID,
+			req.EventID,
+			req.UserID,
 		)
-		isCreator, err := h.EventParticipantRepository.IsEventCreatorById(req.EventID, userID)
+
+		isCreator, err := h.EventParticipantRepository.IsEventCreatorById(
+			req.EventID,
+			userID,
+		)
 		if err != nil {
-			http.Error(w, "Error checking if user is creator of event", http.StatusInternalServerError)
-			return
-		}
-		if !isCreator {
-			http.Error(w, "User is not creator of event", http.StatusForbidden)
+			http.Error(
+				w,
+				"Error checking if user is creator of event",
+				http.StatusInternalServerError,
+			)
 			return
 		}
 
-		if err := h.EventParticipantRepository.AddParticipant(req.EventID, req.UserID); err != nil {
-			http.Error(w, "Failed to add participant", http.StatusInternalServerError)
+		if !isCreator {
+			http.Error(
+				w,
+				"User is not creator of event",
+				http.StatusForbidden,
+			)
+			return
+		}
+
+		if err := h.EventParticipantRepository.AddParticipant(
+			req.EventID,
+			req.UserID,
+		); err != nil {
+			http.Error(
+				w,
+				"Failed to add participant",
+				http.StatusInternalServerError,
+			)
 			return
 		}
 
@@ -93,45 +147,97 @@ func (h *EventParticipantHandler) AddEventParticipant() http.HandlerFunc {
 func (h *EventParticipantHandler) DeleteEventParticipant() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		participantParam := chi.URLParam(r, "id")
-		participantID, err := strconv.ParseUint(participantParam, 10, 64)
+
+		participantID, err := strconv.ParseUint(
+			participantParam,
+			10,
+			64,
+		)
 		if err != nil {
-			http.Error(w, "Invalid participant ID", http.StatusBadRequest)
+			http.Error(
+				w,
+				"Invalid participant ID",
+				http.StatusBadRequest,
+			)
 			return
 		}
 
 		eventParam := chi.URLParam(r, "event_id")
-		eventID, err := strconv.ParseUint(eventParam, 10, 64)
+
+		eventID, err := strconv.ParseUint(
+			eventParam,
+			10,
+			64,
+		)
 		if err != nil {
-			switch err {
-			case event.EventErrors["missing"]:
-				http.Error(w, "user id not found in context", http.StatusUnauthorized)
-				return
-			case event.EventErrors["type"]:
-				http.Error(w, "user id has invalid type", http.StatusInternalServerError)
-				return
-			default:
-				http.Error(w, "internal error", http.StatusInternalServerError)
-				return
-			}
+			http.Error(
+				w,
+				"Invalid event ID",
+				http.StatusBadRequest,
+			)
+			return
 		}
 
 		userID, err := event.GetUserIDFromContext(r.Context())
 		if err != nil {
-			http.Error(w, "Error getting user ID from context", http.StatusInternalServerError)
-			return
+			switch err {
+			case event.EventErrors["missing"]:
+				http.Error(
+					w,
+					"user id not found in context",
+					http.StatusUnauthorized,
+				)
+				return
+
+			case event.EventErrors["type"]:
+				http.Error(
+					w,
+					"user id has invalid type",
+					http.StatusInternalServerError,
+				)
+				return
+
+			default:
+				http.Error(
+					w,
+					"internal error",
+					http.StatusInternalServerError,
+				)
+				return
+			}
 		}
-		isCreator, err := h.EventParticipantRepository.IsEventCreatorById(uint(eventID), userID)
+
+		isCreator, err := h.EventParticipantRepository.IsEventCreatorById(
+			uint(eventID),
+			userID,
+		)
 		if err != nil {
-			http.Error(w, "Error checking if user is creator of event", http.StatusInternalServerError)
-			return
-		}
-		if !isCreator {
-			http.Error(w, "User is not creator of event", http.StatusForbidden)
+			http.Error(
+				w,
+				"Error checking if user is creator of event",
+				http.StatusInternalServerError,
+			)
 			return
 		}
 
-		if err := h.EventParticipantRepository.RemoveParticipant(uint(eventID), uint(participantID)); err != nil {
-			http.Error(w, "Failed to remove participant", http.StatusInternalServerError)
+		if !isCreator {
+			http.Error(
+				w,
+				"User is not creator of event",
+				http.StatusForbidden,
+			)
+			return
+		}
+
+		if err := h.EventParticipantRepository.RemoveParticipant(
+			uint(eventID),
+			uint(participantID),
+		); err != nil {
+			http.Error(
+				w,
+				"Failed to remove participant",
+				http.StatusInternalServerError,
+			)
 			return
 		}
 
@@ -143,28 +249,50 @@ func (h *EventParticipantHandler) DeleteEventParticipant() http.HandlerFunc {
 func (h *EventParticipantHandler) GetEventParticipantById() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		idParam := chi.URLParam(r, "id")
-		id, err := strconv.ParseUint(idParam, 10, 64)
+
+		id, err := strconv.ParseUint(
+			idParam,
+			10,
+			64,
+		)
 		if err != nil {
-			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			http.Error(
+				w,
+				"Invalid ID",
+				http.StatusBadRequest,
+			)
 			return
 		}
 
-		participants, err := h.EventParticipantRepository.GetUsersWithInvites(uint(id))
+		participants, err := h.EventParticipantRepository.GetUsersWithInvites(
+			uint(id),
+		)
 		if err != nil {
-			http.Error(w, "Failed to get participants", http.StatusInternalServerError)
+			http.Error(
+				w,
+				"Failed to get participants",
+				http.StatusInternalServerError,
+			)
 			return
 		}
 
-		//Собираем ответ
 		var usersInvite []models.UserStatus
+
 		for _, p := range participants {
-			usersInvite = append(usersInvite, models.UserStatus{
-				UserId: p.UserID,
-				Status: p.Status,
-			})
+			usersInvite = append(
+				usersInvite,
+				models.UserStatus{
+					UserId: p.UserID,
+					Status: p.Status,
+				},
+			)
 		}
 
-		res.JsonResponse(w, usersInvite, http.StatusOK)
+		res.JsonResponse(
+			w,
+			usersInvite,
+			http.StatusOK,
+		)
 	}
 }
 
@@ -172,20 +300,39 @@ func (h *EventParticipantHandler) GetEventParticipantById() http.HandlerFunc {
 func (h *EventParticipantHandler) GetUserEvents() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userIDParam := chi.URLParam(r, "user_id")
-		userID, err := strconv.ParseUint(userIDParam, 10, 64)
+
+		userID, err := strconv.ParseUint(
+			userIDParam,
+			10,
+			64,
+		)
 		if err != nil {
-			http.Error(w, "Invalid user ID", http.StatusBadRequest)
+			http.Error(
+				w,
+				"Invalid user ID",
+				http.StatusBadRequest,
+			)
 			return
 		}
 
-		events, err := h.EventParticipantRepository.GetUserEvents(uint(userID))
+		events, err := h.EventParticipantRepository.GetUserEvents(
+			uint(userID),
+		)
 		if err != nil {
-			http.Error(w, "Failed to get user events", http.StatusInternalServerError)
+			http.Error(
+				w,
+				"Failed to get user events",
+				http.StatusInternalServerError,
+			)
 			return
 		}
 
 		if err := json.NewEncoder(w).Encode(events); err != nil {
-			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			http.Error(
+				w,
+				"Failed to encode response",
+				http.StatusInternalServerError,
+			)
 			return
 		}
 	}
@@ -198,20 +345,39 @@ func (h *EventParticipantHandler) IsParticipant() http.HandlerFunc {
 			EventID uint `json:"event_id"`
 			UserID  uint `json:"user_id"`
 		}
+
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			http.Error(
+				w,
+				"Invalid request body",
+				http.StatusBadRequest,
+			)
 			return
 		}
 
-		isParticipant, err := h.EventParticipantRepository.IsParticipant(req.EventID, req.UserID)
+		isParticipant, err := h.EventParticipantRepository.IsParticipant(
+			req.EventID,
+			req.UserID,
+		)
 		if err != nil {
-			http.Error(w, "Failed to check participation", http.StatusInternalServerError)
+			http.Error(
+				w,
+				"Failed to check participation",
+				http.StatusInternalServerError,
+			)
 			return
 		}
 
-		response := map[string]bool{"is_participant": isParticipant}
+		response := map[string]bool{
+			"is_participant": isParticipant,
+		}
+
 		if err := json.NewEncoder(w).Encode(response); err != nil {
-			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			http.Error(
+				w,
+				"Failed to encode response",
+				http.StatusInternalServerError,
+			)
 			return
 		}
 	}
