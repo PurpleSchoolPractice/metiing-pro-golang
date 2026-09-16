@@ -153,7 +153,7 @@ func TestRefreshTokensSuccess(t *testing.T) {
 			AddRow(1, validEmail, "hashedpassword", "testuser"))
 
 	// Вызываем метод обновления токенов
-	newTokenPair, err := authService.RefreshTokens(tokenPair.AccessToken, tokenPair.RefreshToken)
+	newTokenPair, err := authService.RefreshTokens(tokenPair.RefreshToken, tokenPair.AccessToken+"testString")
 
 	require.NoError(t, err)
 	require.NotEmpty(t, newTokenPair.AccessToken)
@@ -193,7 +193,7 @@ func TestRefreshTokensUserNotFound(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{}))
 
 	// Вызываем метод обновления токенов
-	_, err := authService.RefreshTokens(tokenPair.AccessToken, tokenPair.RefreshToken)
+	_, err := authService.RefreshTokens(tokenPair.RefreshToken, tokenPair.AccessToken+"testString")
 
 	// Проверка, что получили ожидаемую ошибку
 	require.Error(t, err)

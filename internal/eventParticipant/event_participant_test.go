@@ -25,8 +25,7 @@ func TestAddParticipant(t *testing.T) {
 	t.Cleanup(cleanup)
 	mockDB.ExpectBegin()
 	mockDB.ExpectQuery(`INSERT INTO "event_participants"`).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(),
-			uint(1), uint(1)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), uint(1), uint(1), sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	mockDB.ExpectCommit()
 	dbWrapper := &db.Db{DB: gormDB}
@@ -41,8 +40,8 @@ func TestRemoveParticipant(t *testing.T) {
 	gormDB, mockDB, cleanup := mock.SetupMockDB(t)
 	t.Cleanup(cleanup)
 	mockDB.ExpectBegin()
-	mockDB.ExpectExec(`DELETE FROM "event_participants" WHERE event_id = $1 AND user_id = $2`).
-		WithArgs(uint(1), uint(1)).
+	mockDB.ExpectExec(`UPDATE "event_participants" SET "deleted_at"`).
+		WithArgs(sqlmock.AnyArg(), uint(1), uint(1)).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mockDB.ExpectCommit()
 	dbWrapper := &db.Db{DB: gormDB}
@@ -89,9 +88,7 @@ func TestGetUserEvents(t *testing.T) {
 	require.NoError(t, err)
 
 	// Мокаем запрос на получение событий пользователя через таблицу event_participants
-	mockDB.ExpectQuery(`SELECT events.* FROM "events" 
-                      JOIN event_participants ON events.id = event_participants.event_id 
-                      WHERE event_participants.user_id = \$1`).
+	mockDB.ExpectQuery(`SELECT .* FROM "events" JOIN event_participants ON events.id = event_participants.event_id WHERE event_participants.user_id = \$1 AND "events"."deleted_at" IS NULL`).
 		WithArgs(uint(1)).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "created_at", "updated_at", "deleted_at", "title", "description", "event_date", "creator_id",
@@ -114,7 +111,7 @@ func TestIsParticipant(t *testing.T) {
 	t.Cleanup(cleanup)
 
 	// Тест для случая, когда пользователь является участником
-	mockDB.ExpectQuery(`SELECT count(*) FROM "event_participants" WHERE event_id = $1 AND user_id = $2`).
+	mockDB.ExpectQuery(`SELECT count\(\*\) FROM "event_participants" WHERE \(event_id = \$1 AND user_id = \$2\) AND "event_participants"."deleted_at" IS NULL`).
 		WithArgs(uint(1), uint(1)).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
@@ -127,7 +124,7 @@ func TestIsParticipant(t *testing.T) {
 	require.NoError(t, mockDB.ExpectationsWereMet())
 
 	// Тест для случая, когда пользователь не является участником
-	mockDB.ExpectQuery(`SELECT count(*) FROM "event_participants" WHERE event_id = $1 AND user_id = $2`).
+	mockDB.ExpectQuery(`SELECT count\(\*\) FROM "event_participants" WHERE \(event_id = \$1 AND user_id = \$2\) AND "event_participants"."deleted_at" IS NULL`).
 		WithArgs(uint(1), uint(2)).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 
