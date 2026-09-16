@@ -65,4 +65,9 @@ func InitModelMigration() {
 		logging.Error(err.Error())
 		return
 	}
+	err = FAQModelInit(database, logging)
+	if err != nil {
+		logging.Error(err.Error())
+		return
+	}
 }
