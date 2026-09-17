@@ -14,6 +14,10 @@ func Migrate() error {
 	}
 
 	id := []int{1, 2}
+	if err := database.Unscoped().Where("id IN (?)", id).Delete(&models.FAQ{}).Error; err != nil {
+		logging.Error("Failed to delete default FAQ")
+		return err
+	}
 	if err := database.Unscoped().Where("id IN (?)", id).Delete(&models.EventParticipant{}).Error; err != nil {
 		logging.Error("Failed to delete default eventParticipant")
 		return err

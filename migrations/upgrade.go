@@ -223,3 +223,24 @@ func PreviousPasswordModelInit(db *gorm.DB, log logger.LoggerInterface) error {
 	}
 	return nil
 }
+func FAQModelInit(db *gorm.DB, logger logger.LoggerInterface) error {
+	count, err := checkTable[models.FAQ](db)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		faqs := []*models.FAQ{
+			{
+				Question: "Как создать встречу?",
+				Answer:   "Нажмите кнопку «Создать встречу».",
+			},
+		}
+
+		// Сохраняем это всё в базу
+		if err := db.Create(&faqs).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

@@ -13,6 +13,7 @@ import (
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/auth"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/event"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/eventParticipant"
+	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/faq"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/logger"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/passwordReset"
 	"github.com/PurpleSchoolPractice/metiing-pro-golang/internal/secret"
@@ -91,6 +92,10 @@ func setupApplication() *AppComponents {
 		EventParticipantRepository: eventParticipantRepo,
 		JWTService:                 jwtService,
 	})
+	//Регистрация хендлера FAQ
+	faqRepo := faq.NewFAQRepository(database)
+	faqService := faq.NewFAQService(faqRepo)
+	faq.NewFAQHandler(router, faqService)
 
 	return &AppComponents{
 		Config: cfg,
